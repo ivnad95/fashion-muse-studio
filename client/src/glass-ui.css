@@ -1,0 +1,332 @@
+/* Glass UI Styles - Premium glassmorphism effects inspired by Fashion Muse Studio */
+
+:root {
+  --bg-color: #0A133B;
+  --light-color1: #002857;
+  --light-color2: #004b93;
+  --light-color3: #0A76AF;
+  --silver-light: #F5F7FA;
+  --silver-mid: #C8CDD5;
+  --silver-dark: #8A92A0;
+  --silver-glow: rgba(200, 205, 213, 0.4);
+  --shadow-color: rgba(0,0,0,0.5);
+  --glass-blur: 24px;
+}
+
+/* Phone frame for desktop view */
+.phone-frame {
+  position: relative;
+  width: 375px;
+  height: 812px;
+  background: linear-gradient(135deg, var(--light-color1), var(--light-color2), var(--light-color1));
+  border-radius: 54px;
+  box-shadow: 0 20px 60px -10px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.02);
+  border: 1px solid rgba(200, 205, 213, 0.2);
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.phone-shimmer-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 54px;
+  background: linear-gradient(-45deg,
+    rgba(4, 30, 66, 0.3),
+    rgba(31, 85, 139, 0.4),
+    rgba(4, 30, 66, 0.3),
+    rgba(12, 36, 84, 0.5)
+  );
+  background-size: 600% 600%;
+  animation: silver-shimmer 18s ease infinite;
+  opacity: 0.45;
+}
+
+@keyframes silver-shimmer {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+.screen-content {
+  padding: 20px 24px 100px;
+  height: 100%;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 1;
+}
+
+.screen-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* Glass 3D effects */
+.glass-3d-surface {
+  position: relative;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
+  box-shadow:
+    inset 0 2px 2px 0 rgba(255,255,255,0.1),
+    inset 0 -2px 2px 0 rgba(0,0,0,0.4),
+    0 15px 35px var(--shadow-color);
+}
+
+.glass-3d-button {
+  position: relative;
+  cursor: pointer;
+  color: var(--silver-mid);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 50%),
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.01) 100%);
+  box-shadow:
+    inset 0 2px 1px 0 rgba(255,255,255,0.15),
+    inset 0 -3px 2px 0 rgba(0,0,0,0.5),
+    0 8px 15px var(--shadow-color);
+  transition: all 0.1s ease-out;
+  border: none;
+}
+
+.glass-3d-button::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 10%;
+  width: 80%;
+  height: 40%;
+  background: linear-gradient(160deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 50% / 100%;
+  transform: rotate(-10deg) skewX(-15deg);
+  filter: blur(2px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.glass-3d-button:hover {
+  transform: translateY(-3px) scale(1.02);
+  color: var(--silver-light);
+  box-shadow:
+    inset 0 2px 1px 0 rgba(255,255,255,0.2),
+    inset 0 -3px 2px 0 rgba(0,0,0,0.5),
+    0 12px 25px var(--shadow-color);
+}
+
+.glass-3d-button:active,
+.glass-3d-button.active {
+  transform: scale(0.96) translateY(2px);
+  color: var(--silver-light);
+  background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, transparent 100%);
+  box-shadow:
+    inset 0 5px 8px rgba(0,0,0,0.7),
+    inset 0 -1px 1px rgba(255,255,255,0.2);
+  text-shadow: 0 0 12px var(--silver-glow);
+}
+
+.glass-3d-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow:
+    inset 0 2px 2px rgba(128,128,128,0.2),
+    inset 0 -2px 3px rgba(0,0,0,0.4);
+}
+
+.button-text {
+  font-weight: 600;
+  text-shadow: 0 1px 2px var(--shadow-color);
+}
+
+/* Number chips for count selector */
+.number-chip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.number-chip.active {
+  background: linear-gradient(135deg, var(--silver-dark), var(--silver-light));
+  text-shadow: none;
+}
+
+.number-chip.active .button-text {
+  color: #333;
+}
+
+/* Primary action button */
+.primary-button {
+  height: 50px;
+  border-radius: 25px;
+}
+
+.primary-button .button-text {
+  font-size: 1.125rem;
+}
+
+/* Sparkle/magic button */
+.sparkle-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+}
+
+/* Delete button variant */
+.delete-button {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background-color: rgba(255, 80, 80, 0.15);
+  box-shadow:
+    inset 0 2px 1px 0 rgba(255,150,150,0.15),
+    inset 0 -3px 2px 0 rgba(100,0,0,0.5),
+    0 8px 15px rgba(100,0,0,0.3);
+}
+
+.delete-button .button-text {
+  color: rgba(255, 150, 150, 1);
+}
+
+.delete-button:hover {
+  background-color: rgba(255, 80, 80, 0.25);
+}
+
+.delete-button:hover .button-text {
+  color: #fff;
+}
+
+/* Bottom navigation */
+.bottom-nav {
+  height: 80px;
+  border-radius: 40px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+}
+
+.nav-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loading animations */
+.loading-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-dots div {
+  width: 8px;
+  height: 8px;
+  margin: 0 4px;
+  background-color: var(--silver-mid);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots div:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots div:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1.0);
+  }
+}
+
+.loading-pulse {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+}
+
+.loading-pulse::before {
+  content: "";
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid rgba(200,205,213,0.2);
+  border-top-color: var(--silver-mid);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loader {
+  border: 4px solid rgba(255,255,255,0.1);
+  border-top: 4px solid var(--silver-mid);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .phone-frame {
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--light-color1), var(--light-color2), var(--light-color1));
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+
+  .phone-shimmer-bg {
+    border-radius: 0;
+  }
+
+  .screen-content {
+    padding: 20px 16px 100px;
+  }
+}
+
+/* Image container with rounded corners */
+.image-container {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
