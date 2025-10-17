@@ -218,15 +218,16 @@
   justify-content: center;
 }
 
-//* Navigation Bar */
+/* Navigation Bar */
 .nav-bar {
   display: flex;
+  flex-direction: row;
   justify-content: space-around;
   align-items: center;
-  padding: 12px 16px;
-  max-width: 430px;
-  margin: 0 auto;
+  padding: 16px 20px;
+  width: 100%;
   border-radius: 24px 24px 0 0;
+  flex-shrink: 0;
 }
 
 .nav-button {
