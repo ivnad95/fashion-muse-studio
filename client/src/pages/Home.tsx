@@ -63,7 +63,7 @@ export default function Home() {
       <div className="phone-frame">
         <div className="screen-content">
           {/* Fixed Header */}
-          <div className="fixed-header glass-3d-surface">
+          <div className="fixed-header">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Fashion Muse" className="w-10 h-10" />
               <div>
