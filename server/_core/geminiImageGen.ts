@@ -1,200 +1,189 @@
 /**
- * Gemini Image Editing using gemini-2.5-flash-image model
- * Docs: https://ai.google.dev/gemini-api/docs/image-generation
+ * Gemini Image Generation using gemini-2.5-flash-image model
  * 
- * Transforms regular images into realistic, professional photographs
- * while preserving the person's real face, expression, and clothing.
+ * This module provides image editing capabilities using Gemini's image generation model.
+ * It transforms existing images based on text prompts while preserving facial features.
  */
 
-export interface GeminiImageGenerationOptions {
+interface GeminiImageOptions {
+  imageBase64: string;
+  mimeType: string;
   prompt: string;
-  referenceImageBase64: string;
-  numberOfImages?: number;
   style?: string;
   cameraAngle?: string;
   lighting?: string;
 }
 
-export interface GeminiImageGenerationResult {
-  images: string[];
+interface GeminiImageResult {
+  images: string[]; // Array of base64 encoded images
 }
 
 /**
- * Style-specific prompts that preserve identity while enhancing quality
- */
-const STYLE_PROMPTS: Record<string, string> = {
-  Editorial: "High-end fashion editorial photograph with professional studio lighting, clean minimalist background, sharp focus, magazine-quality composition, natural pose, sophisticated atmosphere, Vogue-style editorial quality",
-  Commercial: "Professional commercial photography shot with bright even lighting, clean white or neutral background, product-focused composition, catalog-ready quality, approachable and friendly atmosphere",
-  Artistic: "Artistic portrait photograph with creative lighting, shadows and highlights, textured or gradient background, dramatic composition, fine art photography quality, emotional depth",
-  Casual: "Natural lifestyle photograph with soft natural lighting, outdoor or home environment background, candid feel, relaxed composition, authentic everyday photography style",
-  Glamour: "Glamorous beauty photograph with soft diffused lighting and glow, elegant background, polished composition, high-end beauty photography quality, sophisticated and luxurious feel",
-  Vintage: "Vintage-style photograph with warm film-like tones, classic photography lighting, timeless background, nostalgic composition, retro photography aesthetic from 1960s-1980s era",
-};
-
-/**
- * Camera angle prompts for professional composition
- */
-const CAMERA_ANGLE_PROMPTS: Record<string, string> = {
-  "Eye Level": "shot at eye level with straight-on perspective, direct connection with viewer, balanced composition, standard portrait framing, professional headshot angle",
-  "High Angle": "shot from above looking down, camera positioned higher than subject, flattering downward angle, elongating effect, editorial fashion angle that creates elegance",
-  "Low Angle": "shot from below looking up, camera positioned lower than subject, powerful perspective, dramatic upward angle that creates confidence and authority, fashion runway style",
-  "Dutch Angle": "shot with tilted camera angle, dynamic diagonal composition, creative perspective that adds energy and movement, artistic editorial style, modern fashion photography",
-  "Over Shoulder": "shot from behind and to the side with over-the-shoulder perspective, creates depth, storytelling angle, editorial narrative style that adds context and dimension",
-  "Three Quarter": "shot at 45-degree angle with three-quarter view, classic portrait angle that shows depth and dimension, most flattering perspective, professional photography standard",
-  Profile: "shot from the side with full profile view, silhouette emphasis, artistic composition that highlights facial features, classic portrait style, elegant and timeless",
-  "Close Up": "tight framing on face and upper body, intimate perspective with detailed view, beauty photography style that emphasizes facial features and expression, magazine cover quality",
-};
-
-/**
- * Lighting setup prompts for professional illumination
- */
-const LIGHTING_PROMPTS: Record<string, string> = {
-  "Natural Light": "lit with soft natural window light, gentle shadows, authentic daylight quality, no artificial lighting, organic feel, golden hour warmth, photojournalistic style",
-  "Studio Light": "lit with professional studio lighting setup including key light and fill light, controlled shadows, even illumination, commercial photography quality, clean and polished look",
-  "Dramatic Light": "lit with high-contrast dramatic lighting, strong shadows and highlights, chiaroscuro effect, moody atmosphere, artistic photography style that creates depth and emotion",
-  "Soft Light": "lit with diffused soft lighting, minimal shadows, flattering illumination, beauty photography quality, gentle and even light that creates smooth and polished look",
-  Backlight: "lit from behind with rim lighting effect, glowing edges, silhouette elements, creates separation from background, editorial fashion style that adds dimension and drama",
-  "Golden Hour": "lit with warm golden hour sunlight, soft directional light, warm color temperature, natural outdoor quality, romantic atmosphere, sunset or sunrise photography style",
-};
-
-/**
- * Build a detailed realistic photography prompt
- */
-function buildRealisticPrompt(
-  basePrompt: string,
-  style?: string,
-  cameraAngle?: string,
-  lighting?: string
-): string {
-  // Core instruction to preserve identity and create realistic photo
-  let prompt = `Transform this person into a professional fashion photograph. CRITICAL: Keep the person's face, facial features, expression, skin tone, and overall appearance EXACTLY as shown in the original image. Only enhance the photography quality, background, and styling to create a realistic, professional fashion photo that looks like it was shot by a professional photographer.\n\n`;
-  
-  // Add user's base prompt if provided
-  if (basePrompt && basePrompt.trim()) {
-    prompt += `Additional Instructions: ${basePrompt}\n\n`;
-  }
-  
-  // Add style details
-  if (style && STYLE_PROMPTS[style]) {
-    prompt += `Photography Style: ${STYLE_PROMPTS[style]}.\n\n`;
-  }
-  
-  // Add camera angle
-  if (cameraAngle && CAMERA_ANGLE_PROMPTS[cameraAngle]) {
-    prompt += `Camera Angle: ${CAMERA_ANGLE_PROMPTS[cameraAngle]}.\n\n`;
-  }
-  
-  // Add lighting
-  if (lighting && LIGHTING_PROMPTS[lighting]) {
-    prompt += `Lighting Setup: ${LIGHTING_PROMPTS[lighting]}.\n\n`;
-  }
-  
-  // Add professional photography requirements
-  prompt += `Technical Requirements: Create a photorealistic professional photograph. The person must look EXACTLY like they do in the original image - same face, same features, same skin tone, same expression. Only the background, lighting, and overall photo quality should be enhanced to professional fashion photography standards. Shot on professional camera equipment with studio-quality results. The output must be indistinguishable from a real professional photograph, never stylized or artificial.`;
-  
-  return prompt;
-}
-
-/**
- * Generate realistic professional photographs using Gemini
+ * Generate images using Gemini's gemini-2.5-flash-image model
+ * This model supports image editing - transforming an existing image based on a text prompt
  */
 export async function generateImagesWithGemini(
-  options: GeminiImageGenerationOptions
-): Promise<GeminiImageGenerationResult> {
+  options: GeminiImageOptions
+): Promise<GeminiImageResult> {
   const apiKey = process.env.GEMINI_API_KEY;
+  
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY environment variable is not set. Get your API key at https://aistudio.google.com/app/apikey");
+    throw new Error("GEMINI_API_KEY environment variable is not set");
   }
 
   try {
-    const numberOfImages = options.numberOfImages || 1;
-    const images: string[] = [];
+    console.log("[Gemini] Starting image generation with gemini-2.5-flash-image");
+    console.log("[Gemini] Prompt:", options.prompt.substring(0, 100) + "...");
+    console.log("[Gemini] Image size:", options.imageBase64.length, "bytes (base64)");
 
-    // Build the realistic photography prompt
-    const enhancedPrompt = buildRealisticPrompt(
-      options.prompt,
-      options.style,
-      options.cameraAngle,
-      options.lighting
+    // Build the request body according to Gemini API format
+    const requestBody = {
+      contents: [
+        {
+          parts: [
+            {
+              text: options.prompt,
+            },
+            {
+              inline_data: {
+                mime_type: options.mimeType,
+                data: options.imageBase64,
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    console.log("[Gemini] Sending request to Gemini API...");
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      }
     );
 
-    console.log("[Gemini] Generating images with prompt:", enhancedPrompt.substring(0, 200) + "...");
+    console.log("[Gemini] Response status:", response.status);
 
-    // Generate images using Gemini image editing model
-    for (let i = 0; i < numberOfImages; i++) {
-      // Correct API format according to official documentation
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: enhancedPrompt,
-              },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: options.referenceImageBase64,
-                },
-              },
-            ],
-          },
-        ],
-      };
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("[Gemini] API Error:", JSON.stringify(errorData, null, 2));
+      throw new Error(`Gemini API error: ${JSON.stringify(errorData)}`);
+    }
 
-      console.log(`[Gemini] Sending request ${i + 1}/${numberOfImages} to Gemini API...`);
+    const data = await response.json();
+    console.log("[Gemini] Response received");
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`[Gemini] API error:`, errorText);
-        throw new Error(`Gemini API error: ${response.status} ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("[Gemini] Response received, processing...");
-      
-      // Extract image from response
-      let imageFound = false;
-      if (data.candidates && data.candidates.length > 0) {
-        const candidate = data.candidates[0];
+    // Extract images from response
+    const images: string[] = [];
+    
+    if (data.candidates && data.candidates.length > 0) {
+      for (const candidate of data.candidates) {
         if (candidate.content && candidate.content.parts) {
           for (const part of candidate.content.parts) {
-            // Check for inline_data (image)
             if (part.inline_data && part.inline_data.data) {
+              console.log("[Gemini] Found image in response, size:", part.inline_data.data.length);
               images.push(part.inline_data.data);
-              console.log(`[Gemini] Image ${i + 1} extracted successfully`);
-              imageFound = true;
-              break;
             }
-            // Log text responses for debugging
             if (part.text) {
-              console.log(`[Gemini] Text response:`, part.text);
+              console.log("[Gemini] Text response:", part.text);
             }
           }
         }
       }
-      
-      if (!imageFound) {
-        console.error("[Gemini] Full response:", JSON.stringify(data, null, 2));
-        throw new Error("No image data in Gemini response");
-      }
     }
 
-    console.log(`[Gemini] Successfully generated ${images.length} images`);
+    if (images.length === 0) {
+      console.error("[Gemini] No images found in response:", JSON.stringify(data, null, 2));
+      throw new Error("No image data in Gemini response");
+    }
+
+    console.log(`[Gemini] Successfully generated ${images.length} image(s)`);
     return { images };
   } catch (error) {
     console.error("[Gemini] Image generation error:", error);
     throw new Error(`Failed to generate images with Gemini: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
+}
+
+/**
+ * Build a detailed prompt for fashion photography based on user selections
+ */
+export function buildFashionPrompt(options: {
+  style?: string;
+  cameraAngle?: string;
+  lighting?: string;
+}): string {
+  const { style = "Editorial", cameraAngle = "Hero low angle", lighting = "Rembrandt" } = options;
+
+  // Base instruction that MUST preserve the person's appearance
+  let prompt = `Transform this photo into a professional fashion photograph. 
+
+CRITICAL REQUIREMENTS:
+- Keep the person's face, facial features, expression, and skin tone EXACTLY as shown in the original image
+- Preserve their natural appearance, do not alter or stylize their face
+- Maintain their clothing and overall look
+- Only enhance the photography quality, lighting, and background
+
+`;
+
+  // Add style-specific instructions
+  const stylePrompts: Record<string, string> = {
+    Editorial: "Create a high-end editorial fashion photograph with sophisticated styling, professional studio lighting, and a clean minimalist background. The image should look like it belongs in Vogue or Harper's Bazaar magazine.",
+    Streetwear: "Transform into an urban streetwear fashion photograph with contemporary street style aesthetics, natural outdoor lighting, and an authentic city environment background.",
+    Luxury: "Create a luxury high-fashion photograph with opulent styling, dramatic professional lighting, and an elegant sophisticated background befitting luxury brands like Chanel or Dior.",
+    Casual: "Transform into a casual lifestyle fashion photograph with relaxed natural styling, soft natural lighting, and a comfortable everyday environment background.",
+    Vintage: "Create a vintage-inspired fashion photograph with classic retro styling, warm nostalgic lighting, and a timeless period-appropriate background.",
+    Avant: "Transform into an avant-garde fashion photograph with bold experimental styling, dramatic artistic lighting, and a creative conceptual background."
+  };
+
+  prompt += stylePrompts[style] || stylePrompts["Editorial"];
+  prompt += "\n\n";
+
+  // Add camera angle instructions
+  const anglePrompts: Record<string, string> = {
+    "Hero low angle": "Shot from a low camera angle looking slightly upward, creating a powerful heroic perspective.",
+    "Eye level": "Shot at eye level with the camera directly facing the subject at their eye height.",
+    "High angle": "Shot from above looking down at the subject, creating an elegant overhead perspective.",
+    "Dutch tilt": "Shot with a deliberately tilted camera angle for dynamic visual interest.",
+    "Over shoulder": "Shot from behind and over the shoulder, creating depth and narrative interest.",
+    "Profile side": "Shot from the side capturing the subject's profile.",
+    "Three quarter": "Shot at a three-quarter angle showing both front and side of the subject.",
+    "Bird eye": "Shot from directly above in a bird's eye view perspective."
+  };
+
+  prompt += anglePrompts[cameraAngle] || anglePrompts["Hero low angle"];
+  prompt += "\n\n";
+
+  // Add lighting instructions
+  const lightingPrompts: Record<string, string> = {
+    Rembrandt: "Use Rembrandt lighting with a characteristic triangle of light on the cheek, creating dramatic depth and dimension.",
+    Butterfly: "Use butterfly lighting with the main light directly in front and above, creating a butterfly-shaped shadow under the nose.",
+    Loop: "Use loop lighting with a small shadow of the nose on the cheek, creating a flattering natural look.",
+    Split: "Use split lighting illuminating only half the face, creating dramatic contrast and mood.",
+    Rim: "Use rim lighting from behind to create a glowing edge around the subject, separating them from the background.",
+    Natural: "Use soft natural window lighting for an authentic, flattering, and timeless look."
+  };
+
+  prompt += lightingPrompts[lighting] || lightingPrompts["Rembrandt"];
+  prompt += "\n\n";
+
+  // Final quality instructions
+  prompt += `
+Technical specifications:
+- Professional photography quality with sharp focus
+- Realistic skin tones and textures
+- Natural color grading appropriate for fashion photography
+- High resolution and professional composition
+- Studio-quality result that looks authentic and not AI-generated
+
+Remember: The person's face and appearance must remain exactly as in the original image.`;
+
+  return prompt;
 }
 

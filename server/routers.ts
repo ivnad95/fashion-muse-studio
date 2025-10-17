@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { generateImagesWithGemini } from "./_core/geminiImageGen";
+import { generateImagesWithGemini, buildFashionPrompt } from "./_core/geminiImageGen";
 import { applyStylePostProcessing } from "./_core/imagePostProcessing";
 import { analyzeImageQuality, detectAIArtifacts } from "./_core/imageQualityAssurance";
 import { storagePut } from "./storage";
@@ -164,9 +164,13 @@ export const appRouter = router({
             // Generate images using Gemini with reference image
             try {
               const result = await generateImagesWithGemini({
-                prompt: input.prompt,
-                referenceImageBase64: referenceImageBase64,
-                numberOfImages: input.imageCount,
+                prompt: buildFashionPrompt({
+                  style: input.style,
+                  cameraAngle: input.cameraAngle,
+                  lighting: input.lighting,
+                }),
+                imageBase64: referenceImageBase64,
+                mimeType: "image/jpeg",
                 style: input.style,
                 cameraAngle: input.cameraAngle,
                 lighting: input.lighting,
