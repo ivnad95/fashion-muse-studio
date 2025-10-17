@@ -4,7 +4,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { generateImagesWithFlux } from "./_core/fluxImageGen";
+import { generateImagesWithGemini, buildEnhancedFashionPrompt, dataUrlToBase64 } from "./_core/geminiImageGen";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -111,26 +112,53 @@ export const appRouter = router({
             const startTime = Date.now();
             const imageUrls: string[] = [];
             
-            // Build the prompt with style, camera angle, and lighting
-            let fullPrompt = input.prompt;
-            if (input.style) fullPrompt += ` in ${input.style} style`;
-            if (input.cameraAngle) fullPrompt += `, ${input.cameraAngle} camera angle`;
-            if (input.lighting) fullPrompt += `, ${input.lighting} lighting`;
-            fullPrompt += ". Professional fashion photography, high quality, studio setting, elegant and sophisticated.";
-            
-            // Generate images using FLUX AI model
+            // Download reference image and convert to base64
+            let referenceImageBase64 = "";
             try {
-              const result = await generateImagesWithFlux({
+              const imageResponse = await fetch(input.originalUrl);
+              if (imageResponse.ok) {
+                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+                referenceImageBase64 = imageBuffer.toString('base64');
+              }
+            } catch (error) {
+              console.error("Error downloading reference image:", error);
+              throw new Error("Failed to download reference image");
+            }
+            
+            // Build the enhanced fashion prompt
+            const fullPrompt = buildEnhancedFashionPrompt(
+              input.prompt,
+              input.style,
+              input.cameraAngle,
+              input.lighting
+            );
+            
+            // Generate images using Gemini with reference image
+            try {
+              const result = await generateImagesWithGemini({
                 prompt: fullPrompt,
-                width: 768,
-                height: 1024,
-                numImages: input.imageCount,
+                referenceImageBase64: referenceImageBase64,
+                numberOfImages: input.imageCount,
               });
               
-              // FLUX returns direct image URLs, no need to upload
-              imageUrls.push(...result.images);
+              // Upload generated images to S3 and get URLs
+              for (let i = 0; i < result.images.length; i++) {
+                try {
+                  const base64Data = result.images[i];
+                  const buffer = Buffer.from(base64Data, 'base64');
+                  
+                  // Upload to S3
+                  const fileName = `generations/${generationId}/image-${i + 1}-${Date.now()}.png`;
+                  const uploadResult = await storagePut(fileName, buffer, "image/png");
+                  
+                  imageUrls.push(uploadResult.url);
+                } catch (uploadError) {
+                  console.error(`Error uploading image ${i + 1}:`, uploadError);
+                  imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Upload+Error`);
+                }
+              }
             } catch (error) {
-              console.error("FLUX generation error:", error);
+              console.error("Gemini generation error:", error);
               // Fallback to placeholder images
               for (let i = 0; i < input.imageCount; i++) {
                 imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
