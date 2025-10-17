@@ -88,13 +88,13 @@
 /* Glass 3D effects */
 .glass-3d-surface {
   position: relative;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(var(--glass-blur)) saturate(120%);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(120%);
   box-shadow:
-    inset 0 2px 2px 0 rgba(255,255,255,0.1),
-    inset 0 -2px 2px 0 rgba(0,0,0,0.4),
-    0 15px 35px var(--shadow-color);
+    inset 0 1px 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 1px 0 rgba(0,0,0,0.2),
+    0 8px 20px var(--shadow-color);
 }
 
 .glass-3d-button {
