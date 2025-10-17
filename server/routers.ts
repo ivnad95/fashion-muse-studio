@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { invokeLLM } from "./_core/llm";
+import { generateImage } from "./_core/imageGeneration";
 
 export const appRouter = router({
   system: systemRouter,
@@ -105,20 +105,57 @@ export const appRouter = router({
         // Deduct credits
         await deductCredits(ctx.user.id, input.imageCount, generationId);
         
-        // TODO: Implement actual image generation with Gemini API
-        // For now, simulate processing
-        setTimeout(async () => {
-          const mockImageUrls = Array(input.imageCount).fill(null).map((_, i) => 
-            `https://placehold.co/600x800/1a1a2e/ffffff?text=Generated+Image+${i + 1}`
-          );
-          
-          await updateGeneration(generationId, {
-            status: "completed",
-            imageUrls: JSON.stringify(mockImageUrls),
-            completedAt: new Date(),
-            processingTime: 3000,
-          });
-        }, 3000);
+        // Generate images with AI in background
+        (async () => {
+          try {
+            const startTime = Date.now();
+            const imageUrls: string[] = [];
+            
+            // Build the prompt with style, camera angle, and lighting
+            let fullPrompt = input.prompt;
+            if (input.style) fullPrompt += ` in ${input.style} style`;
+            if (input.cameraAngle) fullPrompt += `, ${input.cameraAngle} camera angle`;
+            if (input.lighting) fullPrompt += `, ${input.lighting} lighting`;
+            fullPrompt += ". Professional fashion photography, high quality, studio setting, elegant and sophisticated.";
+            
+            // Generate images using built-in image generation service
+            for (let i = 0; i < input.imageCount; i++) {
+              try {
+                const result = await generateImage({
+                  prompt: fullPrompt,
+                  originalImages: [{
+                    url: input.originalUrl,
+                    mimeType: "image/jpeg"
+                  }]
+                });
+                
+                if (result.url) {
+                  imageUrls.push(result.url);
+                } else {
+                  imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Image+${i + 1}`);
+                }
+              } catch (error) {
+                console.error(`Error generating image ${i + 1}:`, error);
+                imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
+              }
+            }
+            
+            const processingTime = Date.now() - startTime;
+            
+            await updateGeneration(generationId, {
+              status: "completed",
+              imageUrls: JSON.stringify(imageUrls),
+              completedAt: new Date(),
+              processingTime,
+            });
+          } catch (error) {
+            console.error("Generation error:", error);
+            await updateGeneration(generationId, {
+              status: "failed",
+              errorMessage: error instanceof Error ? error.message : "Unknown error",
+            });
+          }
+        })();
         
         return { id: generationId, status: "processing" };
       }),
