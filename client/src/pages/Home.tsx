@@ -58,8 +58,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center p-4 md:p-8">
-      <div className="phone-shimmer-bg"></div>
-      
       <div className="phone-frame">
         <div className="screen-content">
           {/* Fixed Header */}
