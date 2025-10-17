@@ -47,12 +47,23 @@ export async function generateImagesWithFlux(
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
-        console.error(`FLUX API error (create):`, errorText);
+        console.error(`FLUX API error (${createResponse.status} ${createResponse.statusText}):`, errorText);
         throw new Error(`FLUX API error: ${createResponse.status} ${errorText}`);
       }
 
-      const createData = await createResponse.json();
+      let createData: any;
+      try {
+        createData = await createResponse.json();
+      } catch (parseError) {
+        console.error("Failed to parse FLUX API create response as JSON:", parseError);
+        throw new Error("Invalid JSON response from FLUX API (create)");
+      }
+      
       const requestId = createData.id;
+      if (!requestId) {
+        console.error("No request ID in FLUX API response:", JSON.stringify(createData));
+        throw new Error("No request ID in FLUX API response");
+      }
 
       // Step 2: Poll for result
       let imageUrl: string | null = null;
@@ -68,11 +79,17 @@ export async function generateImagesWithFlux(
         });
 
         if (!resultResponse.ok) {
-          console.error(`FLUX API error (get_result): ${resultResponse.status}`);
+          console.error(`FLUX API error (get_result): ${resultResponse.status} ${resultResponse.statusText}`);
           continue;
         }
 
-        const resultData = await resultResponse.json();
+        let resultData: any;
+        try {
+          resultData = await resultResponse.json();
+        } catch (parseError) {
+          console.error("Failed to parse FLUX API result response as JSON:", parseError);
+          continue;
+        }
         
         if (resultData.status === "Ready" && resultData.result?.sample) {
           imageUrl = resultData.result.sample;

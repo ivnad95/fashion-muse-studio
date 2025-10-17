@@ -154,11 +154,17 @@ export async function generateImagesWithGemini(
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Gemini API error:`, errorText);
+        console.error(`Gemini API error (${response.status} ${response.statusText}):`, errorText);
         throw new Error(`Gemini API error: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      let data: any;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse Gemini API response as JSON:", parseError);
+        throw new Error("Invalid JSON response from Gemini API");
+      }
       
       // Extract image from response
       if (data.candidates && data.candidates.length > 0) {
@@ -174,6 +180,7 @@ export async function generateImagesWithGemini(
       }
       
       if (images.length <= i) {
+        console.error("No image data in Gemini response:", JSON.stringify(data, null, 2));
         throw new Error("No image data in Gemini response");
       }
     }
