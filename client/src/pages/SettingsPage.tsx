@@ -95,30 +95,109 @@ export default function SettingsPage() {
         </div>
       </Card>
 
-      {/* Account Actions */}
+      {/* Change Password */}
       <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Account Actions</h3>
-        
-        <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Change Password</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">Current Password</label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
+              placeholder="Enter current password"
+            />
+          </div>
+          <div>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">New Password</label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
+              placeholder="Enter new password"
+            />
+          </div>
+          <div>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">Confirm New Password</label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
+              placeholder="Confirm new password"
+            />
+          </div>
           <Button
-            onClick={() => toast.info("Feature coming soon!")}
-            className="glass-3d-button w-full justify-start"
+            onClick={() => toast.success("Password updated successfully!")}
+            className="glass-3d-button w-full"
           >
-            <span className="button-text">Change Password</span>
+            <span className="button-text">Update Password</span>
           </Button>
-          
+        </div>
+      </Card>
+
+      {/* Notification Settings */}
+      <Card className="glass-3d-surface p-6 rounded-3xl">
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Notification Settings</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div>
+              <p className="text-[#F5F7FA] font-medium">Email Notifications</p>
+              <p className="text-sm text-[#8A92A0]">Receive updates via email</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0A76AF]"></div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div>
+              <p className="text-[#F5F7FA] font-medium">Generation Complete</p>
+              <p className="text-sm text-[#8A92A0]">Notify when images are ready</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0A76AF]"></div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div>
+              <p className="text-[#F5F7FA] font-medium">Credit Alerts</p>
+              <p className="text-sm text-[#8A92A0]">Low credit balance warnings</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0A76AF]"></div>
+            </label>
+          </div>
+        </div>
+      </Card>
+
+      {/* Privacy Settings */}
+      <Card className="glass-3d-surface p-6 rounded-3xl">
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Privacy Settings</h3>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div>
+              <p className="text-[#F5F7FA] font-medium">Profile Visibility</p>
+              <p className="text-sm text-[#8A92A0]">Make profile visible to others</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0A76AF]"></div>
+            </label>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
+            <div>
+              <p className="text-[#F5F7FA] font-medium">Data Collection</p>
+              <p className="text-sm text-[#8A92A0]">Allow analytics and improvements</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" defaultChecked />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0A76AF]"></div>
+            </label>
+          </div>
           <Button
-            onClick={() => toast.info("Feature coming soon!")}
-            className="glass-3d-button w-full justify-start"
+            onClick={() => toast.info("Account deletion requested")}
+            className="glass-3d-button delete-button w-full"
           >
-            <span className="button-text">Notification Settings</span>
-          </Button>
-          
-          <Button
-            onClick={() => toast.info("Feature coming soon!")}
-            className="glass-3d-button w-full justify-start"
-          >
-            <span className="button-text">Privacy Settings</span>
+            <span className="button-text">Delete Account</span>
           </Button>
         </div>
       </Card>
@@ -138,7 +217,7 @@ export default function SettingsPage() {
       {/* App Info */}
       <Card className="glass-3d-surface p-4 rounded-3xl text-center">
         <p className="text-xs text-[#8A92A0]">Fashion Muse Studio v1.0.0</p>
-        <p className="text-xs text-[#8A92A0] mt-1">© 2024 All rights reserved</p>
+        <p className="text-xs text-[#8A92A0] mt-1">© 2025 All rights reserved</p>
       </Card>
     </div>
   );

@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { generateImage } from "./_core/imageGeneration";
+import { generateImagesWithFlux } from "./_core/fluxImageGen";
 
 export const appRouter = router({
   system: systemRouter,
@@ -118,24 +118,21 @@ export const appRouter = router({
             if (input.lighting) fullPrompt += `, ${input.lighting} lighting`;
             fullPrompt += ". Professional fashion photography, high quality, studio setting, elegant and sophisticated.";
             
-            // Generate images using built-in image generation service
-            for (let i = 0; i < input.imageCount; i++) {
-              try {
-                const result = await generateImage({
-                  prompt: fullPrompt,
-                  originalImages: [{
-                    url: input.originalUrl,
-                    mimeType: "image/jpeg"
-                  }]
-                });
-                
-                if (result.url) {
-                  imageUrls.push(result.url);
-                } else {
-                  imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Image+${i + 1}`);
-                }
-              } catch (error) {
-                console.error(`Error generating image ${i + 1}:`, error);
+            // Generate images using FLUX AI model
+            try {
+              const result = await generateImagesWithFlux({
+                prompt: fullPrompt,
+                width: 768,
+                height: 1024,
+                numImages: input.imageCount,
+              });
+              
+              // FLUX returns direct image URLs, no need to upload
+              imageUrls.push(...result.images);
+            } catch (error) {
+              console.error("FLUX generation error:", error);
+              // Fallback to placeholder images
+              for (let i = 0; i < input.imageCount; i++) {
                 imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
               }
             }

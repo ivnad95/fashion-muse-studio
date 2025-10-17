@@ -43,19 +43,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
-      {/* Fixed Header - Fully Transparent */}
-      <div className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="Fashion Muse" className="w-10 h-10" />
-          <div>
-            <h1 className="text-xl font-bold text-[#F5F7FA]">Fashion Muse</h1>
-            <p className="text-xs text-[#8A92A0]">{user?.name || user?.email}</p>
-          </div>
-        </div>
-        
-        <div className="glass-3d-surface px-3 py-2 rounded-full flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#F5F7FA]" />
-          <span className="text-sm font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
+      {/* Fixed Header - Credits Only */}
+      <div className="fixed top-0 right-0 z-50 px-4 md:px-8 py-4">
+        <div className="glass-3d-surface px-4 py-2 rounded-full flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-[#F5F7FA]" />
+          <span className="text-base font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
         </div>
       </div>
 
@@ -103,8 +95,8 @@ export default function Home() {
         </button>
       </nav>
 
-      {/* Desktop Navigation - Sidebar */}
-      <nav className="hidden md:block fixed left-8 top-1/2 -translate-y-1/2 z-50">
+      {/* Desktop Navigation - Right Sidebar */}
+      <nav className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 z-50">
         <div className="glass-3d-surface rounded-3xl p-4 flex flex-col gap-4">
           <button 
             onClick={() => setLocation("/")}

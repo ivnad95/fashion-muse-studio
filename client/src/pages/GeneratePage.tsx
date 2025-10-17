@@ -124,7 +124,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-3 block">Number of Images ({imageCount})</Label>
             <div className="flex gap-2 flex-wrap">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+              {[1, 2, 4, 6, 8].map((num) => (
                 <button
                   key={num}
                   onClick={() => setImageCount(num)}
