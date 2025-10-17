@@ -5,6 +5,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
 import { generateImagesWithGemini } from "./_core/geminiImageGen";
+import { applyStylePostProcessing } from "./_core/imagePostProcessing";
+import { analyzeImageQuality, detectAIArtifacts } from "./_core/imageQualityAssurance";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -135,16 +137,33 @@ export const appRouter = router({
                 cameraAngle: input.cameraAngle,
                 lighting: input.lighting,
               });
-              
-              // Upload generated images to S3 and get URLs
+                            // Post-process and upload generated images to S3
               for (let i = 0; i < result.images.length; i++) {
                 try {
-                  const base64Data = result.images[i];
-                  const buffer = Buffer.from(base64Data, 'base64');
+                  // Convert base64 to buffer
+                  let imageBuffer = Buffer.from(result.images[i], "base64");
                   
+                  // Apply style-specific post-processing for hyper-realism
+                  console.log(`[Generation ${generationId}] Applying post-processing for style: ${input.style}`);
+                  const processedBuffer = await applyStylePostProcessing(imageBuffer, input.style || "Editorial");
+                  imageBuffer = Buffer.from(processedBuffer);
+                  
+                  // Quality assurance check
+                  const qualityMetrics = await analyzeImageQuality(imageBuffer);
+                  console.log(`[Generation ${generationId}] Quality score: ${qualityMetrics.score}/100`);
+                  
+                  if (!qualityMetrics.passed) {
+                    console.warn(`[Generation ${generationId}] Quality issues:`, qualityMetrics.issues);
+                  }
+                  
+                  // AI artifact detection
+                  const artifactCheck = await detectAIArtifacts(imageBuffer);
+                  if (artifactCheck.hasArtifacts) {
+                    console.warn(`[Generation ${generationId}] AI artifacts detected:`, artifactCheck.artifacts);
+                  }                  
                   // Upload to S3
                   const fileName = `generations/${generationId}/image-${i + 1}-${Date.now()}.png`;
-                  const uploadResult = await storagePut(fileName, buffer, "image/png");
+                  const uploadResult = await storagePut(fileName, imageBuffer, "image/png");
                   
                   imageUrls.push(uploadResult.url);
                 } catch (uploadError) {
