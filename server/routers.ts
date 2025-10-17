@@ -89,12 +89,39 @@ export const appRouter = router({
           throw new Error("Insufficient credits");
         }
         
-        // Create generation record
+        // Upload original image to S3 first (to avoid storing large base64 in DB)
+        let originalImageUrl = "";
+        try {
+          if (input.originalUrl.startsWith('data:')) {
+            // Extract base64 and upload to S3
+            const base64Match = input.originalUrl.match(/^data:image\/([a-z]+);base64,(.+)$/);
+            if (base64Match && base64Match[2]) {
+              const imageType = base64Match[1];
+              const base64Data = base64Match[2];
+              const imageBuffer = Buffer.from(base64Data, 'base64');
+              
+              const generationId = crypto.randomUUID();
+              const fileName = `originals/${ctx.user.id}/${generationId}.${imageType}`;
+              const uploadResult = await storagePut(fileName, imageBuffer, `image/${imageType}`);
+              originalImageUrl = uploadResult.url;
+              console.log("[Generation] Original image uploaded to S3:", originalImageUrl);
+            } else {
+              throw new Error("Invalid data URI format");
+            }
+          } else {
+            originalImageUrl = input.originalUrl;
+          }
+        } catch (error) {
+          console.error("[Generation] Error uploading original image:", error);
+          throw new Error("Failed to upload original image");
+        }
+        
+        // Create generation record with S3 URL
         const generationId = crypto.randomUUID();
         const generation = await createGeneration({
           id: generationId,
           userId: ctx.user.id,
-          originalUrl: input.originalUrl,
+          originalUrl: originalImageUrl,
           imageCount: input.imageCount,
           aspectRatio: input.aspectRatio,
           prompt: input.prompt,
