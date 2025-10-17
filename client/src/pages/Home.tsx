@@ -57,9 +57,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center p-4 md:p-8">
-      <div className="phone-frame">
-        <div className="screen-content">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
+      <div className="screen-content">
           {/* Fixed Header */}
           <div className="fixed-header">
             <div className="flex items-center gap-3">
@@ -117,7 +116,6 @@ export default function Home() {
               <Settings className="w-6 h-6" />
             </button>
           </nav>
-        </div>
       </div>
     </div>
   );
