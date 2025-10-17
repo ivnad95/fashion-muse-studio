@@ -1,219 +1,243 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { getLoginUrl } from "@/const";
-import { trpc } from "@/lib/trpc";
-import { Camera, Sparkles, History, Settings, CreditCard, LogOut } from "lucide-react";
-import { useState } from "react";
+import { Camera, History, Settings, Sparkles } from "lucide-react";
 import { Route, Switch, useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
 import GeneratePage from "./GeneratePage";
 import HistoryPage from "./HistoryPage";
-import SettingsPage from "./SettingsPage";
 import PlansPage from "./PlansPage";
+import SettingsPage from "./SettingsPage";
 
 export default function Home() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
   const [location, setLocation] = useLocation();
-  const [currentScreen, setCurrentScreen] = useState<"home" | "generate" | "history" | "settings" | "plans">("home");
-  
+  const { user, loading, error, isAuthenticated } = useAuth();
   const { data: creditsData } = trpc.credits.getBalance.useQuery(undefined, {
     enabled: isAuthenticated,
   });
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
-        <div className="loader"></div>
+      <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center">
+        <div className="glass-3d-surface p-8 rounded-3xl">
+          <div className="animate-pulse text-[#F5F7FA]">Loading...</div>
+        </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (error || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] p-4">
-        <div className="phone-shimmer-bg"></div>
-        <Card className="glass-3d-surface max-w-md w-full p-8 text-center relative z-10">
-          <div className="mb-6">
-            <img src="/logo.png" alt="Fashion Muse Studio" className="w-32 h-32 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-[#F5F7FA] mb-2">Fashion Muse Studio</h1>
-            <p className="text-[#C8CDD5]">Transform your photos into professional fashion art with AI</p>
-          </div>
-          
-          <Button 
-            onClick={() => window.location.href = getLoginUrl()}
-            className="glass-3d-button primary-button w-full"
+      <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center p-4">
+        <div className="glass-3d-surface p-8 rounded-3xl max-w-md text-center">
+          <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Authentication Required</h2>
+          <p className="text-[#8A92A0] mb-6">Please log in to access Fashion Muse Studio.</p>
+          <a
+            href={`${import.meta.env.VITE_OAUTH_PORTAL_URL}?app_id=${import.meta.env.VITE_APP_ID}`}
+            className="glass-3d-button px-6 py-3 rounded-full inline-block text-[#F5F7FA] font-semibold"
           >
-            <span className="button-text">Sign In to Get Started</span>
-          </Button>
-          
-          <div className="mt-6 space-y-2 text-sm text-[#8A92A0]">
-            <p>✨ 10 free credits on signup</p>
-            <p>📸 8 professional camera angles</p>
-            <p>💡 Multiple lighting setups</p>
-          </div>
-        </Card>
+            Log In
+          </a>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
-      <div className="screen-content">
-          {/* Fixed Header */}
-          <div className="fixed-header">
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Fashion Muse" className="w-10 h-10" />
-              <div>
-                <h1 className="text-xl font-bold text-[#F5F7FA]">Fashion Muse</h1>
-                <p className="text-xs text-[#8A92A0]">{user?.name || user?.email}</p>
-              </div>
-            </div>
-            
-            <div className="glass-3d-surface px-3 py-2 rounded-full flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#F5F7FA]" />
-              <span className="text-sm font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
-            </div>
+      {/* Fixed Header - Fully Transparent */}
+      <div className="fixed top-0 left-0 right-0 z-50 px-4 md:px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Fashion Muse" className="w-10 h-10" />
+          <div>
+            <h1 className="text-xl font-bold text-[#F5F7FA]">Fashion Muse</h1>
+            <p className="text-xs text-[#8A92A0]">{user?.name || user?.email}</p>
           </div>
-
-          {/* Main Content */}
-          <div className="flex-1 overflow-y-auto scrollable-content" style={{ scrollbarWidth: 'none' }}>
-            <Switch location={location}>
-              <Route path="/" component={WelcomeScreen} />
-              <Route path="/generate" component={GeneratePage} />
-              <Route path="/history" component={HistoryPage} />
-              <Route path="/settings" component={SettingsPage} />
-              <Route path="/plans" component={PlansPage} />
-            </Switch>
-          </div>
-
-          {/* Bottom Navigation */}
-          <nav className="nav-bar glass-3d-surface">
-            <button 
-              onClick={() => setLocation("/")}
-              className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
-            >
-              <Camera className="w-6 h-6" />
-            </button>
-            
-            <button 
-              onClick={() => setLocation("/generate")}
-              className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
-            >
-              <Sparkles className="w-7 h-7" />
-            </button>
-            
-            <button 
-              onClick={() => setLocation("/history")}
-              className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
-            >
-              <History className="w-6 h-6" />
-            </button>
-            
-            <button 
-              onClick={() => setLocation("/settings")}
-              className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
-            >
-              <Settings className="w-6 h-6" />
-            </button>
-          </nav>
+        </div>
+        
+        <div className="glass-3d-surface px-3 py-2 rounded-full flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[#F5F7FA]" />
+          <span className="text-sm font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
+        </div>
       </div>
+
+      {/* Main Content - Mobile: Stack, Desktop: Grid */}
+      <div className="pt-20 pb-28 md:pb-8 px-4 md:px-8 min-h-screen">
+        <div className="max-w-7xl mx-auto">
+          <Switch location={location}>
+            <Route path="/" component={WelcomeScreen} />
+            <Route path="/generate" component={GeneratePage} />
+            <Route path="/history" component={HistoryPage} />
+            <Route path="/settings" component={SettingsPage} />
+            <Route path="/plans" component={PlansPage} />
+          </Switch>
+        </div>
+      </div>
+
+      {/* Bottom Navigation - Mobile Only, Fully Transparent */}
+      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-50 px-4 pb-6 pt-4 flex items-center justify-center gap-4">
+        <button 
+          onClick={() => setLocation("/")}
+          className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
+        >
+          <Camera className="w-6 h-6" />
+        </button>
+        
+        <button 
+          onClick={() => setLocation("/generate")}
+          className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
+        >
+          <Sparkles className="w-7 h-7" />
+        </button>
+        
+        <button 
+          onClick={() => setLocation("/history")}
+          className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
+        >
+          <History className="w-6 h-6" />
+        </button>
+        
+        <button 
+          onClick={() => setLocation("/settings")}
+          className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
+        >
+          <Settings className="w-6 h-6" />
+        </button>
+      </nav>
+
+      {/* Desktop Navigation - Sidebar */}
+      <nav className="hidden md:block fixed left-8 top-1/2 -translate-y-1/2 z-50">
+        <div className="glass-3d-surface rounded-3xl p-4 flex flex-col gap-4">
+          <button 
+            onClick={() => setLocation("/")}
+            className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
+            title="Home"
+          >
+            <Camera className="w-6 h-6" />
+          </button>
+          
+          <button 
+            onClick={() => setLocation("/generate")}
+            className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
+            title="Generate"
+          >
+            <Sparkles className="w-7 h-7" />
+          </button>
+          
+          <button 
+            onClick={() => setLocation("/history")}
+            className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
+            title="History"
+          >
+            <History className="w-6 h-6" />
+          </button>
+          
+          <button 
+            onClick={() => setLocation("/settings")}
+            className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
+            title="Settings"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
 
 function WelcomeScreen() {
   const [location, setLocation] = useLocation();
-  const { data: creditsData } = trpc.credits.getBalance.useQuery();
-  const { data: plans } = trpc.plans.list.useQuery();
 
   return (
-    <div className="space-y-6 pb-6">
-      <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Welcome to Fashion Muse</h2>
-        <p className="text-[#C8CDD5] mb-6">
-          Transform your photos into stunning professional fashion photography with AI-powered generation.
-        </p>
-        
-        <Button 
-          onClick={() => setLocation("/generate")}
-          className="glass-3d-button primary-button w-full mb-4"
-        >
-          <Sparkles className="w-5 h-5 mr-2" />
-          <span className="button-text">Start Creating</span>
-        </Button>
-        
-        <div className="grid grid-cols-2 gap-3">
-          <Button 
-            onClick={() => setLocation("/history")}
-            className="glass-3d-button"
-          >
-            <History className="w-4 h-4 mr-2" />
-            <span className="button-text text-sm">History</span>
-          </Button>
+    <div className="space-y-6">
+      {/* Hero Section - Desktop: 2 columns */}
+      <div className="glass-3d-surface p-8 md:p-12 rounded-3xl">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#F5F7FA] mb-4">
+              Welcome to Fashion Muse
+            </h2>
+            <p className="text-[#8A92A0] text-lg mb-6">
+              Transform your photos into stunning professional fashion photography with AI-powered generation.
+            </p>
+            <button
+              onClick={() => setLocation("/generate")}
+              className="glass-3d-button primary-button w-full md:w-auto px-8 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="button-text">Start Creating</span>
+            </button>
+          </div>
           
-          <Button 
-            onClick={() => setLocation("/plans")}
-            className="glass-3d-button"
-          >
-            <CreditCard className="w-4 h-4 mr-2" />
-            <span className="button-text text-sm">Plans</span>
-          </Button>
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => setLocation("/history")}
+              className="glass-3d-button p-6 rounded-2xl flex flex-col items-center gap-2"
+            >
+              <History className="w-8 h-8 text-[#F5F7FA]" />
+              <span className="button-text text-sm">History</span>
+            </button>
+            <button
+              onClick={() => setLocation("/plans")}
+              className="glass-3d-button p-6 rounded-2xl flex flex-col items-center gap-2"
+            >
+              <Sparkles className="w-8 h-8 text-[#F5F7FA]" />
+              <span className="button-text text-sm">Plans</span>
+            </button>
+          </div>
         </div>
-      </Card>
+      </div>
 
-      <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Features</h3>
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center flex-shrink-0">
-              <Camera className="w-4 h-4 text-white" />
+      {/* Features Grid - Desktop: 3 columns */}
+      <div className="glass-3d-surface p-8 rounded-3xl">
+        <h3 className="text-2xl font-bold text-[#F5F7FA] mb-6">Features</h3>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="flex items-start gap-4">
+            <div className="glass-3d-surface p-3 rounded-xl">
+              <Camera className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <p className="text-[#F5F7FA] font-medium">8 Camera Angles</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">8 Camera Angles</h4>
               <p className="text-sm text-[#8A92A0]">Professional photography perspectives</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+          <div className="flex items-start gap-4">
+            <div className="glass-3d-surface p-3 rounded-xl">
+              <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <p className="text-[#F5F7FA] font-medium">Multiple Lighting</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">Multiple Lighting</h4>
               <p className="text-sm text-[#8A92A0]">Studio-quality lighting setups</p>
             </div>
           </div>
           
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center flex-shrink-0">
-              <CreditCard className="w-4 h-4 text-white" />
+          <div className="flex items-start gap-4">
+            <div className="glass-3d-surface p-3 rounded-xl">
+              <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <p className="text-[#F5F7FA] font-medium">Credit System</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">Credit System</h4>
               <p className="text-sm text-[#8A92A0]">Flexible plans for every need</p>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {plans && plans.length > 0 && (
-        <Card className="glass-3d-surface p-6 rounded-3xl">
-          <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Your Plan</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[#F5F7FA] font-medium">Free Plan</p>
-              <p className="text-sm text-[#8A92A0]">{creditsData?.credits || 0} credits remaining</p>
-            </div>
-            <Button 
-              onClick={() => setLocation("/plans")}
-              className="glass-3d-button"
-              size="sm"
-            >
-              <span className="button-text text-sm">Upgrade</span>
-            </Button>
+      {/* Your Plan Section */}
+      <div className="glass-3d-surface p-8 rounded-3xl">
+        <h3 className="text-2xl font-bold text-[#F5F7FA] mb-6">Your Plan</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-semibold text-[#F5F7FA] mb-1">Free Plan</h4>
+            <p className="text-sm text-[#8A92A0]">10 credits remaining</p>
           </div>
-        </Card>
-      )}
+          <button
+            onClick={() => setLocation("/plans")}
+            className="glass-3d-button px-6 py-3 rounded-full"
+          >
+            <span className="button-text">Upgrade</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
