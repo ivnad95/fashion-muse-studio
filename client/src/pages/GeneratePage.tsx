@@ -1,36 +1,47 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
-import { Camera, Upload, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Camera, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 
 export default function GeneratePage() {
   const [imageCount, setImageCount] = useState(1);
-  const [imageUrl, setImageUrl] = useState("");
-  const [prompt, setPrompt] = useState("Transform this into a professional fashion photoshoot");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [style, setStyle] = useState("Editorial");
   const [cameraAngle, setCameraAngle] = useState("Hero low angle");
   const [lighting, setLighting] = useState("Rembrandt");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { data: creditsData } = trpc.credits.getBalance.useQuery();
   const createMutation = trpc.generations.create.useMutation({
     onSuccess: () => {
       toast.success("Generation started! Check history for results.");
-      setImageUrl("");
-      setPrompt("Transform this into a professional fashion photoshoot");
+      setImageFile(null);
+      setImagePreview("");
     },
     onError: (error) => {
       toast.error(error.message || "Failed to start generation");
     },
   });
 
-  const handleGenerate = () => {
-    if (!imageUrl) {
-      toast.error("Please provide an image URL");
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!imageFile) {
+      toast.error("Please upload an image first");
       return;
     }
     
@@ -39,51 +50,74 @@ export default function GeneratePage() {
       return;
     }
 
-    createMutation.mutate({
-      originalUrl: imageUrl,
-      imageCount,
-      aspectRatio: "portrait",
-      prompt,
-      style,
-      cameraAngle,
-      lighting,
-    });
+    // Convert image to base64 for upload
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      
+      createMutation.mutate({
+        originalUrl: base64, // Using base64 as URL for now
+        imageCount,
+        aspectRatio: "portrait",
+        prompt: "Transform this into a professional fashion photoshoot",
+        style,
+        cameraAngle,
+        lighting,
+      });
+    };
+    reader.readAsDataURL(imageFile);
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-6">
       <Card className="glass-3d-surface p-6 rounded-3xl">
         <h2 className="text-2xl font-bold text-[#F5F7FA] mb-6 flex items-center gap-2">
           <Sparkles className="w-6 h-6" />
           Generate Fashion Art
         </h2>
 
-        <div className="space-y-4">
-          {/* Image URL Input */}
+        <div className="space-y-6">
+          {/* Image Upload Area */}
           <div>
-            <Label className="text-[#C8CDD5] mb-2 block">Image URL</Label>
-            <div className="relative">
-              <Input
-                type="url"
-                placeholder="https://example.com/image.jpg"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                className="glass-3d-surface border-0 text-[#F5F7FA] placeholder:text-[#8A92A0]"
-              />
-              <Upload className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A92A0]" />
-            </div>
-            <p className="text-xs text-[#8A92A0] mt-1">Paste a URL to your image</p>
-          </div>
-
-          {/* Prompt */}
-          <div>
-            <Label className="text-[#C8CDD5] mb-2 block">Prompt</Label>
-            <Textarea
-              placeholder="Describe the style you want..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="glass-3d-surface border-0 text-[#F5F7FA] placeholder:text-[#8A92A0] min-h-[100px]"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
             />
+            
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full aspect-[3/4] rounded-2xl glass-3d-surface border-2 border-dashed border-[#0A76AF]/30 hover:border-[#0A76AF]/60 transition-all overflow-hidden group relative"
+            >
+              {imagePreview ? (
+                <>
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="text-center">
+                      <Upload className="w-12 h-12 text-white mx-auto mb-2" />
+                      <p className="text-white font-medium">Change Image</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#0A76AF]/20 to-[#004b93]/20 flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-[#0A76AF]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[#F5F7FA] font-semibold text-lg mb-2">Upload Your Photo</p>
+                    <p className="text-[#8A92A0] text-sm">Click to select an image</p>
+                    <p className="text-[#8A92A0] text-xs mt-1">JPG, PNG or WEBP</p>
+                  </div>
+                </div>
+              )}
+            </button>
           </div>
 
           {/* Image Count Selector */}
@@ -156,7 +190,7 @@ export default function GeneratePage() {
           {/* Generate Button */}
           <Button
             onClick={handleGenerate}
-            disabled={createMutation.isPending || !imageUrl}
+            disabled={createMutation.isPending || !imageFile}
             className="glass-3d-button primary-button w-full mt-6"
           >
             {createMutation.isPending ? (
@@ -179,7 +213,7 @@ export default function GeneratePage() {
         <h3 className="text-sm font-semibold text-[#C8CDD5] mb-3">💡 Tips</h3>
         <ul className="space-y-2 text-sm text-[#8A92A0]">
           <li>• Use high-quality images for best results</li>
-          <li>• Be specific in your prompt for better accuracy</li>
+          <li>• Portrait orientation works best</li>
           <li>• Generation takes 10-30 seconds</li>
           <li>• Check history tab for completed images</li>
         </ul>

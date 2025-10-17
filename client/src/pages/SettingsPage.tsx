@@ -21,7 +21,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-6">
       <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Settings</h2>
 
       {/* Profile Card */}

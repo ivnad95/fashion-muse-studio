@@ -17,7 +17,7 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-6">
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-[#F5F7FA] mb-2">Choose Your Plan</h2>
         <p className="text-[#C8CDD5]">Unlock unlimited creativity with our flexible plans</p>

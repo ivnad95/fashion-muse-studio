@@ -79,7 +79,7 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto -ms-overflow-style-none scrollbar-width-none" style={{ scrollbarWidth: 'none' }}>
             <Switch location={location}>
               <Route path="/" component={WelcomeScreen} />
               <Route path="/generate" component={GeneratePage} />
@@ -90,7 +90,7 @@ export default function Home() {
           </div>
 
           {/* Bottom Navigation */}
-          <nav className="bottom-nav glass-3d-surface">
+          <nav className="nav-bar glass-3d-surface">
             <button 
               onClick={() => setLocation("/")}
               className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
@@ -131,7 +131,7 @@ function WelcomeScreen() {
   const { data: plans } = trpc.plans.list.useQuery();
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-6">
       <Card className="glass-3d-surface p-6 rounded-3xl">
         <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Welcome to Fashion Muse</h2>
         <p className="text-[#C8CDD5] mb-6">

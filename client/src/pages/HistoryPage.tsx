@@ -27,7 +27,7 @@ export default function HistoryPage() {
 
   if (!generations || generations.length === 0) {
     return (
-      <div className="space-y-6 pb-20">
+      <div className="space-y-6 pb-6">
         <Card className="glass-3d-surface p-8 rounded-3xl text-center">
           <Clock className="w-16 h-16 mx-auto mb-4 text-[#8A92A0]" />
           <h2 className="text-xl font-bold text-[#F5F7FA] mb-2">No Generations Yet</h2>
@@ -40,7 +40,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-6">
       <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Generation History</h2>
       
       {generations.map((generation) => (
