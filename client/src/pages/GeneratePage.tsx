@@ -14,7 +14,7 @@ export default function GeneratePage() {
   const [cameraAngle, setCameraAngle] = useState("Hero low angle");
   const [lighting, setLighting] = useState("Rembrandt");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const { data: creditsData } = trpc.credits.getBalance.useQuery();
   const createMutation = trpc.generations.create.useMutation({
     onSuccess: () => {
@@ -22,7 +22,7 @@ export default function GeneratePage() {
       setImageFile(null);
       setImagePreview("");
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(error.message || "Failed to start generation");
     },
   });
@@ -44,7 +44,7 @@ export default function GeneratePage() {
       toast.error("Please upload an image first");
       return;
     }
-    
+
     if (!creditsData || creditsData.credits < imageCount) {
       toast.error("Insufficient credits");
       return;
@@ -54,7 +54,7 @@ export default function GeneratePage() {
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64 = reader.result as string;
-      
+
       createMutation.mutate({
         originalUrl: base64, // Using base64 as URL for now
         imageCount,
@@ -86,16 +86,16 @@ export default function GeneratePage() {
               onChange={handleImageSelect}
               className="hidden"
             />
-            
+
             <button
               onClick={() => fileInputRef.current?.click()}
               className="w-full aspect-[3/4] rounded-2xl glass-3d-surface border-2 border-dashed border-[#0A76AF]/30 hover:border-[#0A76AF]/60 transition-all overflow-hidden group relative"
             >
               {imagePreview ? (
                 <>
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -111,9 +111,15 @@ export default function GeneratePage() {
                     <ImageIcon className="w-12 h-12 text-[#0A76AF]" />
                   </div>
                   <div className="text-center">
-                    <p className="text-[#F5F7FA] font-semibold text-lg mb-2">Upload Your Photo</p>
-                    <p className="text-[#8A92A0] text-sm">Click to select an image</p>
-                    <p className="text-[#8A92A0] text-xs mt-1">JPG, PNG or WEBP</p>
+                    <p className="text-[#F5F7FA] font-semibold text-lg mb-2">
+                      Upload Your Photo
+                    </p>
+                    <p className="text-[#8A92A0] text-sm">
+                      Click to select an image
+                    </p>
+                    <p className="text-[#8A92A0] text-xs mt-1">
+                      JPG, PNG or WEBP
+                    </p>
                   </div>
                 </div>
               )}
@@ -122,9 +128,11 @@ export default function GeneratePage() {
 
           {/* Image Count Selector */}
           <div>
-            <Label className="text-[#C8CDD5] mb-3 block">Number of Images ({imageCount})</Label>
+            <Label className="text-[#C8CDD5] mb-3 block">
+              Number of Images ({imageCount})
+            </Label>
             <div className="flex gap-2 flex-wrap">
-              {[1, 2, 4, 6, 8].map((num) => (
+              {[1, 2, 4, 6, 8].map(num => (
                 <button
                   key={num}
                   onClick={() => setImageCount(num)}
@@ -135,7 +143,8 @@ export default function GeneratePage() {
               ))}
             </div>
             <p className="text-xs text-[#8A92A0] mt-2">
-              Cost: {imageCount} credit{imageCount > 1 ? "s" : ""} | Available: {creditsData?.credits || 0}
+              Cost: {imageCount} credit{imageCount > 1 ? "s" : ""} | Available:{" "}
+              {creditsData?.credits || 0}
             </p>
           </div>
 
@@ -143,7 +152,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Style</Label>
             <div className="grid grid-cols-2 gap-2">
-              {["Editorial", "Vogue", "Minimalist", "Vintage"].map((s) => (
+              {["Editorial", "Vogue", "Minimalist", "Vintage"].map(s => (
                 <button
                   key={s}
                   onClick={() => setStyle(s)}
@@ -159,7 +168,12 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Camera Angle</Label>
             <div className="grid grid-cols-2 gap-2">
-              {["Hero low angle", "Beauty close-up", "Editorial side", "Full body"].map((angle) => (
+              {[
+                "Hero low angle",
+                "Beauty close-up",
+                "Editorial side",
+                "Full body",
+              ].map(angle => (
                 <button
                   key={angle}
                   onClick={() => setCameraAngle(angle)}
@@ -175,7 +189,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Lighting</Label>
             <div className="grid grid-cols-2 gap-2">
-              {["Rembrandt", "Butterfly", "Split", "Loop"].map((light) => (
+              {["Rembrandt", "Butterfly", "Split", "Loop"].map(light => (
                 <button
                   key={light}
                   onClick={() => setLighting(light)}
@@ -202,7 +216,9 @@ export default function GeneratePage() {
             ) : (
               <>
                 <Camera className="w-5 h-5 mr-2" />
-                <span className="button-text">Generate ({imageCount} credit{imageCount > 1 ? "s" : ""})</span>
+                <span className="button-text">
+                  Generate ({imageCount} credit{imageCount > 1 ? "s" : ""})
+                </span>
               </>
             )}
           </Button>
@@ -221,4 +237,3 @@ export default function GeneratePage() {
     </div>
   );
 }
-

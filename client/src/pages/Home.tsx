@@ -28,8 +28,12 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center p-4">
         <div className="glass-3d-surface p-8 rounded-3xl max-w-md text-center">
-          <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Authentication Required</h2>
-          <p className="text-[#8A92A0] mb-6">Please log in to access Fashion Muse Studio.</p>
+          <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">
+            Authentication Required
+          </h2>
+          <p className="text-[#8A92A0] mb-6">
+            Please log in to access Fashion Muse Studio.
+          </p>
           <a
             href={`${import.meta.env.VITE_OAUTH_PORTAL_URL}?app_id=${import.meta.env.VITE_APP_ID}`}
             className="glass-3d-button px-6 py-3 rounded-full inline-block text-[#F5F7FA] font-semibold"
@@ -47,7 +51,9 @@ export default function Home() {
       <div className="fixed top-0 right-0 z-50 px-4 md:px-8 py-4">
         <div className="glass-3d-surface px-4 py-2 rounded-full flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-[#F5F7FA]" />
-          <span className="text-base font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
+          <span className="text-base font-semibold text-[#F5F7FA]">
+            {creditsData?.credits || 0}
+          </span>
         </div>
       </div>
 
@@ -66,28 +72,28 @@ export default function Home() {
 
       {/* Bottom Navigation - Mobile Only, Fully Transparent */}
       <nav className="fixed bottom-0 left-0 right-0 md:hidden z-50 px-4 pb-6 pt-4 flex items-center justify-center gap-4">
-        <button 
+        <button
           onClick={() => setLocation("/")}
           className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
         >
           <Camera className="w-6 h-6" />
         </button>
-        
-        <button 
+
+        <button
           onClick={() => setLocation("/generate")}
           className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
         >
           <Sparkles className="w-7 h-7" />
         </button>
-        
-        <button 
+
+        <button
           onClick={() => setLocation("/history")}
           className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
         >
           <History className="w-6 h-6" />
         </button>
-        
-        <button 
+
+        <button
           onClick={() => setLocation("/settings")}
           className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
         >
@@ -98,31 +104,31 @@ export default function Home() {
       {/* Desktop Navigation - Right Sidebar */}
       <nav className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 z-50">
         <div className="glass-3d-surface rounded-3xl p-4 flex flex-col gap-4">
-          <button 
+          <button
             onClick={() => setLocation("/")}
             className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
             title="Home"
           >
             <Camera className="w-6 h-6" />
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setLocation("/generate")}
             className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
             title="Generate"
           >
             <Sparkles className="w-7 h-7" />
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setLocation("/history")}
             className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
             title="History"
           >
             <History className="w-6 h-6" />
           </button>
-          
-          <button 
+
+          <button
             onClick={() => setLocation("/settings")}
             className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
             title="Settings"
@@ -148,7 +154,8 @@ function WelcomeScreen() {
               Welcome to Fashion Muse
             </h2>
             <p className="text-[#8A92A0] text-lg mb-6">
-              Transform your photos into stunning professional fashion photography with AI-powered generation.
+              Transform your photos into stunning professional fashion
+              photography with AI-powered generation.
             </p>
             <button
               onClick={() => setLocation("/generate")}
@@ -158,7 +165,7 @@ function WelcomeScreen() {
               <span className="button-text">Start Creating</span>
             </button>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <button
               onClick={() => setLocation("/history")}
@@ -187,28 +194,40 @@ function WelcomeScreen() {
               <Camera className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">8 Camera Angles</h4>
-              <p className="text-sm text-[#8A92A0]">Professional photography perspectives</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">
+                8 Camera Angles
+              </h4>
+              <p className="text-sm text-[#8A92A0]">
+                Professional photography perspectives
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-4">
             <div className="glass-3d-surface p-3 rounded-xl">
               <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">Multiple Lighting</h4>
-              <p className="text-sm text-[#8A92A0]">Studio-quality lighting setups</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">
+                Multiple Lighting
+              </h4>
+              <p className="text-sm text-[#8A92A0]">
+                Studio-quality lighting setups
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-start gap-4">
             <div className="glass-3d-surface p-3 rounded-xl">
               <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
             </div>
             <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">Credit System</h4>
-              <p className="text-sm text-[#8A92A0]">Flexible plans for every need</p>
+              <h4 className="font-semibold text-[#F5F7FA] mb-1">
+                Credit System
+              </h4>
+              <p className="text-sm text-[#8A92A0]">
+                Flexible plans for every need
+              </p>
             </div>
           </div>
         </div>
@@ -233,4 +252,3 @@ function WelcomeScreen() {
     </div>
   );
 }
-

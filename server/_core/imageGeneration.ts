@@ -73,7 +73,10 @@ export async function generateImage(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    console.error(`Image generation API error: ${response.status} ${response.statusText}`, detail);
+    console.error(
+      `Image generation API error: ${response.status} ${response.statusText}`,
+      detail
+    );
     throw new Error(
       `Image generation request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`
     );
@@ -86,30 +89,30 @@ export async function generateImage(
     console.error("Failed to parse API response as JSON:", error);
     throw new Error("Invalid JSON response from image generation API");
   }
-  
+
   // Validate response structure
   if (!result || !result.image) {
     console.error("Invalid API response structure:", JSON.stringify(result));
     throw new Error("Invalid response structure from image generation API");
   }
-  
+
   const imageData = result.image as {
     b64Json?: string;
     b64_json?: string;
     mimeType?: string;
     mime_type?: string;
   };
-  
+
   // Support both camelCase and snake_case field names
   const base64Data = imageData.b64Json || imageData.b64_json;
   const mimeType = imageData.mimeType || imageData.mime_type || "image/png";
-  
+
   if (!base64Data) {
     throw new Error("No image data in API response");
   }
-  
+
   const buffer = Buffer.from(base64Data, "base64");
-  
+
   // Get appropriate file extension from mime type
   const extension = getFileExtensionFromMimeType(mimeType);
 

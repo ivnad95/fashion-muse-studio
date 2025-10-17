@@ -70,9 +70,7 @@
       "compositePrimaryKeys": {
         "creditTransactions_id": {
           "name": "creditTransactions_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -243,9 +241,7 @@
       "compositePrimaryKeys": {
         "generations_id": {
           "name": "generations_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -348,9 +344,7 @@
       "compositePrimaryKeys": {
         "subscriptionPlans_id": {
           "name": "subscriptionPlans_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
@@ -448,9 +442,7 @@
       "compositePrimaryKeys": {
         "users_id": {
           "name": "users_id",
-          "columns": [
-            "id"
-          ]
+          "columns": ["id"]
         }
       },
       "uniqueConstraints": {},
