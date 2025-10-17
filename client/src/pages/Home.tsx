@@ -62,8 +62,8 @@ export default function Home() {
       
       <div className="phone-frame">
         <div className="screen-content">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Fixed Header */}
+          <div className="fixed-header glass-3d-surface">
             <div className="flex items-center gap-3">
               <img src="/logo.png" alt="Fashion Muse" className="w-10 h-10" />
               <div>
@@ -79,7 +79,7 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto -ms-overflow-style-none scrollbar-width-none" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex-1 overflow-y-auto scrollable-content" style={{ scrollbarWidth: 'none' }}>
             <Switch location={location}>
               <Route path="/" component={WelcomeScreen} />
               <Route path="/generate" component={GeneratePage} />

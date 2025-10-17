@@ -48,13 +48,36 @@
 }
 
 .screen-content {
-  padding: 20px 24px 0;
+  padding: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
   overflow: hidden;
+}
+
+.fixed-header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 54px 54px 0 0;
+}
+
+.scrollable-content {
+  padding: 0 24px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollable-content::-webkit-scrollbar {
+  display: none;
 }
 
 .screen-content::-webkit-scrollbar {
