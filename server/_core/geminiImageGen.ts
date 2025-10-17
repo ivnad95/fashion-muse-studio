@@ -1,10 +1,9 @@
 /**
  * Gemini Image Editing using gemini-2.5-flash-image model
- * Docs: https://ai.google.dev/gemini-api/docs/image-generation#gemini-image-editing
+ * Docs: https://ai.google.dev/gemini-api/docs/image-generation
  * 
  * Transforms regular images into realistic, professional photographs
  * while preserving the person's real face, expression, and clothing.
- * Never stylizes, animates, or artificially alters the person.
  */
 
 export interface GeminiImageGenerationOptions {
@@ -67,12 +66,12 @@ function buildRealisticPrompt(
   cameraAngle?: string,
   lighting?: string
 ): string {
-  // Core instruction to preserve identity
-  let prompt = `Transform this into a professional photograph while keeping the person's face, expression, and clothing EXACTLY as they are in the original image. Never stylize, animate, or artificially alter the person. Only enhance the photography quality, lighting, and background.\n\n`;
+  // Core instruction to preserve identity and create realistic photo
+  let prompt = `Transform this person into a professional fashion photograph. CRITICAL: Keep the person's face, facial features, expression, skin tone, and overall appearance EXACTLY as shown in the original image. Only enhance the photography quality, background, and styling to create a realistic, professional fashion photo that looks like it was shot by a professional photographer.\n\n`;
   
-  // Add user's base prompt
+  // Add user's base prompt if provided
   if (basePrompt && basePrompt.trim()) {
-    prompt += `User Request: ${basePrompt}\n\n`;
+    prompt += `Additional Instructions: ${basePrompt}\n\n`;
   }
   
   // Add style details
@@ -91,7 +90,7 @@ function buildRealisticPrompt(
   }
   
   // Add professional photography requirements
-  prompt += `Technical Requirements: Photorealistic result, studio-quality professional photography, 8k resolution, shot on Hasselblad medium format camera, natural and authentic appearance, preserves all original facial features, expression, and clothing. The person must look exactly the same, only the photo quality, lighting, and background are enhanced to professional standards.`;
+  prompt += `Technical Requirements: Create a photorealistic professional photograph. The person must look EXACTLY like they do in the original image - same face, same features, same skin tone, same expression. Only the background, lighting, and overall photo quality should be enhanced to professional fashion photography standards. Shot on professional camera equipment with studio-quality results. The output must be indistinguishable from a real professional photograph, never stylized or artificial.`;
   
   return prompt;
 }
@@ -119,10 +118,11 @@ export async function generateImagesWithGemini(
       options.lighting
     );
 
-    console.log("Gemini Prompt:", enhancedPrompt);
+    console.log("[Gemini] Generating images with prompt:", enhancedPrompt.substring(0, 200) + "...");
 
     // Generate images using Gemini image editing model
     for (let i = 0; i < numberOfImages; i++) {
+      // Correct API format according to official documentation
       const requestBody = {
         contents: [
           {
@@ -141,6 +141,8 @@ export async function generateImagesWithGemini(
         ],
       };
 
+      console.log(`[Gemini] Sending request ${i + 1}/${numberOfImages} to Gemini API...`);
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
         {
@@ -154,51 +156,45 @@ export async function generateImagesWithGemini(
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`Gemini API error:`, errorText);
+        console.error(`[Gemini] API error:`, errorText);
         throw new Error(`Gemini API error: ${response.status} ${errorText}`);
       }
 
       const data = await response.json();
+      console.log("[Gemini] Response received, processing...");
       
       // Extract image from response
+      let imageFound = false;
       if (data.candidates && data.candidates.length > 0) {
         const candidate = data.candidates[0];
         if (candidate.content && candidate.content.parts) {
           for (const part of candidate.content.parts) {
+            // Check for inline_data (image)
             if (part.inline_data && part.inline_data.data) {
               images.push(part.inline_data.data);
+              console.log(`[Gemini] Image ${i + 1} extracted successfully`);
+              imageFound = true;
               break;
+            }
+            // Log text responses for debugging
+            if (part.text) {
+              console.log(`[Gemini] Text response:`, part.text);
             }
           }
         }
       }
       
-      if (images.length <= i) {
+      if (!imageFound) {
+        console.error("[Gemini] Full response:", JSON.stringify(data, null, 2));
         throw new Error("No image data in Gemini response");
       }
     }
 
+    console.log(`[Gemini] Successfully generated ${images.length} images`);
     return { images };
   } catch (error) {
-    console.error("Gemini image generation error:", error);
+    console.error("[Gemini] Image generation error:", error);
     throw new Error(`Failed to generate images with Gemini: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
-}
-
-/**
- * Convert base64 image to data URL
- */
-export function base64ToDataUrl(base64: string, mimeType: string = "image/png"): string {
-  return `data:${mimeType};base64,${base64}`;
-}
-
-/**
- * Convert data URL to base64
- */
-export function dataUrlToBase64(dataUrl: string): string {
-  if (dataUrl.startsWith('data:')) {
-    return dataUrl.split(',')[1];
-  }
-  return dataUrl;
 }
 

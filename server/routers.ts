@@ -74,7 +74,7 @@ export const appRouter = router({
     
     create: protectedProcedure
       .input(z.object({
-        originalUrl: z.string().url(),
+        originalUrl: z.string(), // Can be URL or base64 data URI
         imageCount: z.number().min(1).max(8),
         aspectRatio: z.enum(["portrait", "landscape", "square"]).default("portrait"),
         style: z.string().optional(),
@@ -114,17 +114,24 @@ export const appRouter = router({
             const startTime = Date.now();
             const imageUrls: string[] = [];
             
-            // Download reference image and convert to base64
+            // Extract base64 from data URI (uploaded from device)
             let referenceImageBase64 = "";
             try {
-              const imageResponse = await fetch(input.originalUrl);
-              if (imageResponse.ok) {
-                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-                referenceImageBase64 = imageBuffer.toString('base64');
+              if (input.originalUrl.startsWith('data:')) {
+                // Extract base64 from data URI
+                const base64Match = input.originalUrl.match(/^data:image\/[a-z]+;base64,(.+)$/);
+                if (base64Match && base64Match[1]) {
+                  referenceImageBase64 = base64Match[1];
+                  console.log("[Generation] Using base64 image from device upload");
+                } else {
+                  throw new Error("Invalid data URI format");
+                }
+              } else {
+                throw new Error("Only base64 data URIs are supported. Please upload an image from your device.");
               }
             } catch (error) {
-              console.error("Error downloading reference image:", error);
-              throw new Error("Failed to download reference image");
+              console.error("[Generation] Error processing reference image:", error);
+              throw new Error(`Failed to process reference image: ${error instanceof Error ? error.message : "Unknown error"}`);
             }
             
             // Generate images using Gemini with reference image
