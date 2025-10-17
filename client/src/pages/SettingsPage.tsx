@@ -30,14 +30,16 @@ export default function SettingsPage() {
           <User className="w-5 h-5" />
           Profile
         </h3>
-        
+
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center">
               <User className="w-6 h-6 text-white" />
             </div>
             <div>
-              <p className="text-[#F5F7FA] font-medium">{user?.name || "User"}</p>
+              <p className="text-[#F5F7FA] font-medium">
+                {user?.name || "User"}
+              </p>
               <p className="text-sm text-[#8A92A0]">{user?.email}</p>
             </div>
           </div>
@@ -50,7 +52,7 @@ export default function SettingsPage() {
               </div>
               <span className="text-sm text-[#F5F7FA]">{user?.email}</span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#C8CDD5]">
                 <Calendar className="w-4 h-4" />
@@ -70,12 +72,14 @@ export default function SettingsPage() {
           <CreditCard className="w-5 h-5" />
           Credits & Billing
         </h3>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#C8CDD5] text-sm">Available Credits</p>
-              <p className="text-2xl font-bold text-[#F5F7FA]">{creditsData?.credits || 0}</p>
+              <p className="text-2xl font-bold text-[#F5F7FA]">
+                {creditsData?.credits || 0}
+              </p>
             </div>
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center">
               <CreditCard className="w-6 h-6 text-white" />
@@ -97,10 +101,14 @@ export default function SettingsPage() {
 
       {/* Change Password */}
       <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Change Password</h3>
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">
+          Change Password
+        </h3>
         <div className="space-y-4">
           <div>
-            <label className="text-[#C8CDD5] text-sm mb-2 block">Current Password</label>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">
+              Current Password
+            </label>
             <input
               type="password"
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
@@ -108,7 +116,9 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="text-[#C8CDD5] text-sm mb-2 block">New Password</label>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">
+              New Password
+            </label>
             <input
               type="password"
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
@@ -116,7 +126,9 @@ export default function SettingsPage() {
             />
           </div>
           <div>
-            <label className="text-[#C8CDD5] text-sm mb-2 block">Confirm New Password</label>
+            <label className="text-[#C8CDD5] text-sm mb-2 block">
+              Confirm New Password
+            </label>
             <input
               type="password"
               className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[#F5F7FA] placeholder-[#8A92A0] focus:outline-none focus:border-white/20"
@@ -134,12 +146,16 @@ export default function SettingsPage() {
 
       {/* Notification Settings */}
       <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Notification Settings</h3>
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">
+          Notification Settings
+        </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#F5F7FA] font-medium">Email Notifications</p>
-              <p className="text-sm text-[#8A92A0]">Receive updates via email</p>
+              <p className="text-sm text-[#8A92A0]">
+                Receive updates via email
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -149,7 +165,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#F5F7FA] font-medium">Generation Complete</p>
-              <p className="text-sm text-[#8A92A0]">Notify when images are ready</p>
+              <p className="text-sm text-[#8A92A0]">
+                Notify when images are ready
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -159,7 +177,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#F5F7FA] font-medium">Credit Alerts</p>
-              <p className="text-sm text-[#8A92A0]">Low credit balance warnings</p>
+              <p className="text-sm text-[#8A92A0]">
+                Low credit balance warnings
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -171,12 +191,16 @@ export default function SettingsPage() {
 
       {/* Privacy Settings */}
       <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">Privacy Settings</h3>
+        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-4">
+          Privacy Settings
+        </h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#F5F7FA] font-medium">Profile Visibility</p>
-              <p className="text-sm text-[#8A92A0]">Make profile visible to others</p>
+              <p className="text-sm text-[#8A92A0]">
+                Make profile visible to others
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" />
@@ -186,7 +210,9 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
             <div>
               <p className="text-[#F5F7FA] font-medium">Data Collection</p>
-              <p className="text-sm text-[#8A92A0]">Allow analytics and improvements</p>
+              <p className="text-sm text-[#8A92A0]">
+                Allow analytics and improvements
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
@@ -217,9 +243,10 @@ export default function SettingsPage() {
       {/* App Info */}
       <Card className="glass-3d-surface p-4 rounded-3xl text-center">
         <p className="text-xs text-[#8A92A0]">Fashion Muse Studio v1.0.0</p>
-        <p className="text-xs text-[#8A92A0] mt-1">© 2025 All rights reserved</p>
+        <p className="text-xs text-[#8A92A0] mt-1">
+          © 2025 All rights reserved
+        </p>
       </Card>
     </div>
   );
 }
-

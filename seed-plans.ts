@@ -7,7 +7,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((error) => {
+main().catch(error => {
   console.error("Error seeding plans:", error);
   process.exit(1);
 });

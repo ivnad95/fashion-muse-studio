@@ -47,40 +47,78 @@ export async function generateImagesWithFlux(
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
-        console.error(`FLUX API error (create):`, errorText);
-        throw new Error(`FLUX API error: ${createResponse.status} ${errorText}`);
+        console.error(
+          `FLUX API error (${createResponse.status} ${createResponse.statusText}):`,
+          errorText
+        );
+        throw new Error(
+          `FLUX API error: ${createResponse.status} ${errorText}`
+        );
       }
 
-      const createData = await createResponse.json();
+      let createData: any;
+      try {
+        createData = await createResponse.json();
+      } catch (parseError) {
+        console.error(
+          "Failed to parse FLUX API create response as JSON:",
+          parseError
+        );
+        throw new Error("Invalid JSON response from FLUX API (create)");
+      }
+
       const requestId = createData.id;
+      if (!requestId) {
+        console.error(
+          "No request ID in FLUX API response:",
+          JSON.stringify(createData)
+        );
+        throw new Error("No request ID in FLUX API response");
+      }
 
       // Step 2: Poll for result
       let imageUrl: string | null = null;
       const maxAttempts = 60; // 60 attempts * 2 seconds = 2 minutes max
-      
+
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
 
-        const resultResponse = await fetch(`https://api.bfl.ai/v1/get_result?id=${requestId}`, {
-          headers: {
-            "x-key": apiKey,
-          },
-        });
+        const resultResponse = await fetch(
+          `https://api.bfl.ai/v1/get_result?id=${requestId}`,
+          {
+            headers: {
+              "x-key": apiKey,
+            },
+          }
+        );
 
         if (!resultResponse.ok) {
-          console.error(`FLUX API error (get_result): ${resultResponse.status}`);
+          console.error(
+            `FLUX API error (get_result): ${resultResponse.status} ${resultResponse.statusText}`
+          );
           continue;
         }
 
-        const resultData = await resultResponse.json();
-        
+        let resultData: any;
+        try {
+          resultData = await resultResponse.json();
+        } catch (parseError) {
+          console.error(
+            "Failed to parse FLUX API result response as JSON:",
+            parseError
+          );
+          continue;
+        }
+
         if (resultData.status === "Ready" && resultData.result?.sample) {
           imageUrl = resultData.result.sample;
           break;
         } else if (resultData.status === "Error") {
-          throw new Error(`FLUX generation failed: ${resultData.error || "Unknown error"}`);
+          throw new Error(
+            `FLUX generation failed: ${resultData.error || "Unknown error"}`
+          );
         }
-        
+
         // Status is still "Pending", continue polling
       }
 
@@ -94,7 +132,8 @@ export async function generateImagesWithFlux(
     return { images };
   } catch (error) {
     console.error("FLUX image generation error:", error);
-    throw new Error(`Failed to generate images with FLUX: ${error instanceof Error ? error.message : "Unknown error"}`);
+    throw new Error(
+      `Failed to generate images with FLUX: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 }
-
