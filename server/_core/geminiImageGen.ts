@@ -1,8 +1,8 @@
 /**
- * Gemini Image Generation using gemini-2.5-flash-image model
- * Based on: https://ai.google.dev/gemini-api/docs/image-generation
+ * Gemini Image Editing using gemini-2.5-flash-image model
+ * Docs: https://ai.google.dev/gemini-api/docs/image-generation#gemini-image-editing
  * 
- * This uses the Gemini multimodal model to generate images from text+image prompts,
+ * This uses the Gemini image editing model to generate images from text+image prompts,
  * preserving the person's facial features while transforming the styling.
  */
 
@@ -10,6 +10,9 @@ export interface GeminiImageGenerationOptions {
   prompt: string;
   referenceImageBase64: string; // Base64 encoded reference image
   numberOfImages?: number;
+  style?: string;
+  cameraAngle?: string;
+  lighting?: string;
 }
 
 export interface GeminiImageGenerationResult {
@@ -25,7 +28,7 @@ function buildFashionPrompt(
   cameraAngle?: string,
   lighting?: string
 ): string {
-  let prompt = `Transform this person into a professional fashion model photograph while keeping their face, facial features, and identity EXACTLY the same. Preserve their eyes, nose, mouth, skin tone, and overall appearance. Only change the clothing, styling, background, and photography aesthetics. `;
+  let prompt = `Create a professional fashion photography image of this person. Transform them into a fashion model while keeping their face, facial features, and identity EXACTLY the same. Preserve their eyes, nose, mouth, skin tone, and overall facial appearance. Only change the clothing, styling, background, and photography aesthetics. `;
   
   prompt += basePrompt;
   
@@ -51,7 +54,7 @@ function buildFashionPrompt(
 }
 
 /**
- * Generate fashion images using Gemini's multimodal model
+ * Generate fashion images using Gemini's image editing model
  * Uses gemini-2.5-flash-image for image generation with reference image
  */
 export async function generateImagesWithGemini(
@@ -66,7 +69,15 @@ export async function generateImagesWithGemini(
     const numberOfImages = options.numberOfImages || 1;
     const images: string[] = [];
 
-    // Generate images using Gemini multimodal model
+    // Build the enhanced prompt
+    const enhancedPrompt = buildFashionPrompt(
+      options.prompt,
+      options.style,
+      options.cameraAngle,
+      options.lighting
+    );
+
+    // Generate images using Gemini image editing model
     for (let i = 0; i < numberOfImages; i++) {
       // Construct the request body with text prompt and reference image
       const requestBody = {
@@ -74,7 +85,7 @@ export async function generateImagesWithGemini(
           {
             parts: [
               {
-                text: options.prompt,
+                text: enhancedPrompt,
               },
               {
                 inline_data: {
@@ -85,16 +96,10 @@ export async function generateImagesWithGemini(
             ],
           },
         ],
-        generationConfig: {
-          temperature: 0.4,
-          topK: 32,
-          topP: 1,
-          maxOutputTokens: 4096,
-        },
       };
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {

@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { generateImagesWithGemini, buildEnhancedFashionPrompt, dataUrlToBase64 } from "./_core/geminiImageGen";
+import { generateImagesWithGemini } from "./_core/geminiImageGen";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -125,20 +125,15 @@ export const appRouter = router({
               throw new Error("Failed to download reference image");
             }
             
-            // Build the enhanced fashion prompt
-            const fullPrompt = buildEnhancedFashionPrompt(
-              input.prompt,
-              input.style,
-              input.cameraAngle,
-              input.lighting
-            );
-            
             // Generate images using Gemini with reference image
             try {
               const result = await generateImagesWithGemini({
-                prompt: fullPrompt,
+                prompt: input.prompt,
                 referenceImageBase64: referenceImageBase64,
                 numberOfImages: input.imageCount,
+                style: input.style,
+                cameraAngle: input.cameraAngle,
+                lighting: input.lighting,
               });
               
               // Upload generated images to S3 and get URLs
