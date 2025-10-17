@@ -55,6 +55,7 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
+  background: transparent;
 }
 
 .fixed-header {
