@@ -2,7 +2,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Camera, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
+import {
+  GENERATION_STYLES,
+  CAMERA_ANGLES,
+  LIGHTING_OPTIONS,
+  MAX_IMAGES_PER_GENERATION,
+  DEFAULT_ASPECT_RATIO,
+  GENERATION_THUMBNAIL_SIZE,
+} from "@shared/const";
+import { Camera as CameraIcon, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
@@ -10,9 +18,9 @@ export default function GeneratePage() {
   const [imageCount, setImageCount] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-  const [style, setStyle] = useState("Editorial");
-  const [cameraAngle, setCameraAngle] = useState("Hero low angle");
-  const [lighting, setLighting] = useState("Rembrandt");
+  const [style, setStyle] = useState<(typeof GENERATION_STYLES)[number]>(GENERATION_STYLES[0]);
+  const [cameraAngle, setCameraAngle] = useState<(typeof CAMERA_ANGLES)[number]>(CAMERA_ANGLES[0]);
+  const [lighting, setLighting] = useState<(typeof LIGHTING_OPTIONS)[number]>(LIGHTING_OPTIONS[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: creditsData } = trpc.credits.getBalance.useQuery();
@@ -33,7 +41,13 @@ export default function GeneratePage() {
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result as string);
+        if (reader.result) {
+          setImagePreview(reader.result as string);
+        }
+      };
+      reader.onerror = () => {
+        toast.error("Failed to read image file");
+        setImageFile(null);
       };
       reader.readAsDataURL(file);
     }
@@ -132,7 +146,7 @@ export default function GeneratePage() {
               Number of Images ({imageCount})
             </Label>
             <div className="flex gap-2 flex-wrap">
-              {[1, 2, 4, 6, 8].map(num => (
+              {[1, 2, 4, 6, MAX_IMAGES_PER_GENERATION].map(num => (
                 <button
                   key={num}
                   onClick={() => setImageCount(num)}
@@ -152,7 +166,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Style</Label>
             <div className="grid grid-cols-2 gap-2">
-              {["Editorial", "Vogue", "Minimalist", "Vintage"].map(s => (
+              {GENERATION_STYLES.slice(0, 4).map(s => (
                 <button
                   key={s}
                   onClick={() => setStyle(s)}
@@ -168,12 +182,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Camera Angle</Label>
             <div className="grid grid-cols-2 gap-2">
-              {[
-                "Hero low angle",
-                "Beauty close-up",
-                "Editorial side",
-                "Full body",
-              ].map(angle => (
+              {CAMERA_ANGLES.slice(0, 4).map(angle => (
                 <button
                   key={angle}
                   onClick={() => setCameraAngle(angle)}
@@ -189,7 +198,7 @@ export default function GeneratePage() {
           <div>
             <Label className="text-[#C8CDD5] mb-2 block">Lighting</Label>
             <div className="grid grid-cols-2 gap-2">
-              {["Rembrandt", "Butterfly", "Split", "Loop"].map(light => (
+              {LIGHTING_OPTIONS.slice(0, 4).map(light => (
                 <button
                   key={light}
                   onClick={() => setLighting(light)}
@@ -215,7 +224,7 @@ export default function GeneratePage() {
               </div>
             ) : (
               <>
-                <Camera className="w-5 h-5 mr-2" />
+                <CameraIcon className="w-5 h-5 mr-2" />
                 <span className="button-text">
                   Generate ({imageCount} credit{imageCount > 1 ? "s" : ""})
                 </span>

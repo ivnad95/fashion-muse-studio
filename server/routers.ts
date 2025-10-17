@@ -1,4 +1,13 @@
 import { COOKIE_NAME } from "@shared/const";
+import {
+  GENERATION_STYLES,
+  CAMERA_ANGLES,
+  LIGHTING_OPTIONS,
+  MAX_IMAGES_PER_GENERATION,
+  DEFAULT_ASPECT_RATIO,
+  MAX_PROMPT_LENGTH,
+  VALID_ASPECT_RATIOS,
+} from "@shared/const";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -12,6 +21,7 @@ import {
   getUser,
   getUserCredits,
   getUserGenerations,
+  refundGenerationCredits,
   seedSubscriptionPlans,
   updateGeneration,
 } from "./db";
@@ -51,7 +61,14 @@ export const appRouter = router({
       const plans = await getActiveSubscriptionPlans();
       return plans.map(plan => ({
         ...plan,
-        features: JSON.parse(plan.features),
+        features: (() => {
+          try {
+            return JSON.parse(plan.features);
+          } catch {
+            console.error("Failed to parse features for plan", plan.id);
+            return [];
+          }
+        })(),
       }));
     }),
 
@@ -66,15 +83,22 @@ export const appRouter = router({
       const generations = await getUserGenerations(ctx.user.id);
       return generations.map(gen => ({
         ...gen,
-        imageUrls: JSON.parse(gen.imageUrls),
+        imageUrls: (() => {
+          try {
+            return JSON.parse(gen.imageUrls);
+          } catch {
+            console.error("Failed to parse imageUrls for generation", gen.id);
+            return [];
+          }
+        })(),
       }));
     }),
 
     get: protectedProcedure
       .input(z.object({ id: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const generation = await getGeneration(input.id);
-        if (!generation) return null;
+        if (!generation || generation.userId !== ctx.user.id) return null;
         return {
           ...generation,
           imageUrls: JSON.parse(generation.imageUrls),
@@ -85,14 +109,14 @@ export const appRouter = router({
       .input(
         z.object({
           originalUrl: z.string().url(),
-          imageCount: z.number().min(1).max(8),
+          imageCount: z.number().min(1).max(MAX_IMAGES_PER_GENERATION),
           aspectRatio: z
-            .enum(["portrait", "landscape", "square"])
-            .default("portrait"),
-          style: z.string().optional(),
-          cameraAngle: z.string().optional(),
-          lighting: z.string().optional(),
-          prompt: z.string(),
+            .enum(VALID_ASPECT_RATIOS)
+            .default(DEFAULT_ASPECT_RATIO),
+          style: z.enum(GENERATION_STYLES).optional(),
+          cameraAngle: z.enum(CAMERA_ANGLES).optional(),
+          lighting: z.enum(LIGHTING_OPTIONS).optional(),
+          prompt: z.string().min(1).max(MAX_PROMPT_LENGTH),
         })
       )
       .mutation(async ({ ctx, input }) => {
@@ -136,6 +160,10 @@ export const appRouter = router({
                   await imageResponse.arrayBuffer()
                 );
                 referenceImageBase64 = imageBuffer.toString("base64");
+              } else {
+                throw new Error(
+                  `Failed to download image: ${imageResponse.statusText}`
+                );
               }
             } catch (error) {
               console.error("Error downloading reference image:", error);
@@ -154,6 +182,7 @@ export const appRouter = router({
               });
 
               // Upload generated images to S3 and get URLs
+              let uploadFailures = 0;
               for (let i = 0; i < result.images.length; i++) {
                 try {
                   const base64Data = result.images[i];
@@ -170,19 +199,19 @@ export const appRouter = router({
                   imageUrls.push(uploadResult.url);
                 } catch (uploadError) {
                   console.error(`Error uploading image ${i + 1}:`, uploadError);
-                  imageUrls.push(
-                    `https://placehold.co/600x800/0A133B/F5F7FA?text=Upload+Error`
-                  );
+                  uploadFailures++;
                 }
+              }
+
+              // Fail the entire generation if any images failed to upload
+              if (uploadFailures > 0) {
+                throw new Error(
+                  `Failed to upload ${uploadFailures} image(s) to storage`
+                );
               }
             } catch (error) {
               console.error("Gemini generation error:", error);
-              // Fallback to placeholder images
-              for (let i = 0; i < input.imageCount; i++) {
-                imageUrls.push(
-                  `https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`
-                );
-              }
+              throw error;
             }
 
             const processingTime = Date.now() - startTime;
@@ -195,11 +224,21 @@ export const appRouter = router({
             });
           } catch (error) {
             console.error("Generation error:", error);
+            const errorMessage =
+              error instanceof Error ? error.message : "Unknown error";
+
+            // Mark as failed
             await updateGeneration(generationId, {
               status: "failed",
-              errorMessage:
-                error instanceof Error ? error.message : "Unknown error",
+              errorMessage,
             });
+
+            // Attempt to refund credits
+            try {
+              await refundGenerationCredits(generationId);
+            } catch (refundError) {
+              console.error("Failed to refund credits:", refundError);
+            }
           }
         })();
 
@@ -208,9 +247,11 @@ export const appRouter = router({
 
     toggleFavorite: protectedProcedure
       .input(z.object({ id: z.string() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const generation = await getGeneration(input.id);
-        if (!generation) throw new Error("Generation not found");
+        if (!generation || generation.userId !== ctx.user.id) {
+          throw new Error("Generation not found or access denied");
+        }
 
         await updateGeneration(input.id, {
           isFavorite: generation.isFavorite ? 0 : 1,

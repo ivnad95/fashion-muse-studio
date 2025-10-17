@@ -21,7 +21,7 @@ const isNonEmptyString = (value: unknown): value is string =>
 export type SessionPayload = {
   openId: string;
   appId: string;
-  name: string;
+  name?: string;
 };
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
@@ -156,6 +156,11 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
+    if (!isNonEmptyString(secret)) {
+      throw new Error(
+        "[Auth] JWT_SECRET is not configured; set a non-empty JWT_SECRET value."
+      );
+    }
     return new TextEncoder().encode(secret);
   }
 
@@ -172,7 +177,7 @@ class SDKServer {
       {
         openId: userId,
         appId: ENV.appId,
-        name: options.name || "",
+        name: options.name ?? "",
       },
       options
     );
@@ -190,7 +195,7 @@ class SDKServer {
     return new SignJWT({
       openId: payload.openId,
       appId: payload.appId,
-      name: payload.name,
+      name: payload.name ?? "",
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
@@ -212,11 +217,7 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
+      if (!isNonEmptyString(openId) || !isNonEmptyString(appId)) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
@@ -224,7 +225,7 @@ class SDKServer {
       return {
         openId,
         appId,
-        name,
+        name: typeof name === "string" ? name : "",
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));

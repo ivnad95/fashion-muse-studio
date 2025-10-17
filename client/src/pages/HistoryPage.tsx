@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { GENERATION_THUMBNAIL_SIZE } from "@shared/const";
 import {
   Download,
   Heart,
@@ -62,7 +63,13 @@ export default function HistoryPage() {
         <Card key={generation.id} className="glass-3d-surface p-4 rounded-3xl">
           <div className="flex items-start gap-4">
             {/* Thumbnail */}
-            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0A76AF] to-[#004b93]">
+            <div
+              className="rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0A76AF] to-[#004b93]"
+              style={{
+                width: `${GENERATION_THUMBNAIL_SIZE}px`,
+                height: `${GENERATION_THUMBNAIL_SIZE}px`,
+              }}
+            >
               {generation.imageUrls && generation.imageUrls.length > 0 ? (
                 <img
                   src={generation.imageUrls[0]}

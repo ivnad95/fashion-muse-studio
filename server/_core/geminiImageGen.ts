@@ -119,6 +119,8 @@ function buildRealisticPrompt(
 /**
  * Generate realistic professional photographs using Gemini
  */
+const GEMINI_REQUEST_TIMEOUT_MS = 60_000; // 60 seconds
+
 export async function generateImagesWithGemini(
   options: GeminiImageGenerationOptions
 ): Promise<GeminiImageGenerationResult> {
@@ -163,56 +165,68 @@ export async function generateImagesWithGemini(
         ],
       };
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        }
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        GEMINI_REQUEST_TIMEOUT_MS
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(
-          `Gemini API error (${response.status} ${response.statusText}):`,
-          errorText
-        );
-        throw new Error(`Gemini API error: ${response.status} ${errorText}`);
-      }
-
-      let data: any;
       try {
-        data = await response.json();
-      } catch (parseError) {
-        console.error(
-          "Failed to parse Gemini API response as JSON:",
-          parseError
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal,
+          }
         );
-        throw new Error("Invalid JSON response from Gemini API");
-      }
 
-      // Extract image from response
-      if (data.candidates && data.candidates.length > 0) {
-        const candidate = data.candidates[0];
-        if (candidate.content && candidate.content.parts) {
-          for (const part of candidate.content.parts) {
-            if (part.inline_data && part.inline_data.data) {
-              images.push(part.inline_data.data);
-              break;
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Gemini API error (${response.status} ${response.statusText}):`,
+            errorText
+          );
+          throw new Error(`Gemini API error: ${response.status} ${errorText}`);
+        }
+
+        let data: any;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error(
+            "Failed to parse Gemini API response as JSON:",
+            parseError
+          );
+          throw new Error("Invalid JSON response from Gemini API");
+        }
+
+        // Extract image from response
+        if (data.candidates && data.candidates.length > 0) {
+          const candidate = data.candidates[0];
+          if (candidate.content && candidate.content.parts) {
+            for (const part of candidate.content.parts) {
+              if (part.inline_data && part.inline_data.data) {
+                images.push(part.inline_data.data);
+                break;
+              }
             }
           }
         }
-      }
 
-      if (images.length <= i) {
-        console.error(
-          "No image data in Gemini response:",
-          JSON.stringify(data, null, 2)
-        );
-        throw new Error("No image data in Gemini response");
+        if (images.length <= i) {
+          console.error(
+            "No image data in Gemini response:",
+            JSON.stringify(data, null, 2)
+          );
+          throw new Error("No image data in Gemini response");
+        }
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 

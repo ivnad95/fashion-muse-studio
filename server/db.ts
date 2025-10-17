@@ -11,6 +11,7 @@ import {
   users,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { DEFAULT_GENERATION_HISTORY_LIMIT } from "@shared/const";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -164,6 +165,40 @@ export async function addCredits(
   await db.insert(creditTransactions).values(transaction);
 }
 
+/**
+ * Refund credits for a failed generation.
+ * Returns true if refund was successful, false if generation not found or already refunded.
+ */
+export async function refundGenerationCredits(generationId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const generation = await getGeneration(generationId);
+  if (!generation) return false;
+
+  // Only refund if status is failed (not already completed)
+  if (generation.status !== "failed") return false;
+
+  // Check if already refunded (look for refund transaction)
+  const existingRefund = await db
+    .select()
+    .from(creditTransactions)
+    .where(eq(creditTransactions.generationId, generationId))
+    .then(results => results.some(tx => tx.type === "refund"));
+
+  if (existingRefund) return false;
+
+  // Refund the credits
+  await addCredits(
+    generation.userId,
+    generation.imageCount,
+    "refund",
+    `Refund for failed generation ${generationId}`
+  );
+
+  return true;
+}
+
 // Generation helpers
 export async function createGeneration(generation: InsertGeneration) {
   const db = await getDb();
@@ -183,7 +218,7 @@ export async function updateGeneration(
   await db.update(generations).set(updates).where(eq(generations.id, id));
 }
 
-export async function getUserGenerations(userId: string, limit: number = 50) {
+export async function getUserGenerations(userId: string, limit: number = DEFAULT_GENERATION_HISTORY_LIMIT) {
   const db = await getDb();
   if (!db) return [];
 
