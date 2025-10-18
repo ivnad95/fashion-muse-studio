@@ -50,18 +50,7 @@ export default function SettingsPage() {
           Profile
         </h3>
         
-        {!user ? (
-          <div className="text-center py-6">
-            <p className="text-[#C8CDD5] mb-4">Sign in to save your generations and access premium features</p>
-            <a
-              href={getLoginUrl()}
-              className="glass-3d-button primary-button px-6 py-3 rounded-2xl inline-flex items-center gap-2"
-            >
-              <User className="w-5 h-5" />
-              <span className="button-text">Sign in with Google</span>
-            </a>
-          </div>
-        ) : (
+        {user && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center">

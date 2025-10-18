@@ -111,6 +111,11 @@ export const appRouter = router({
         prompt: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Require authentication
+        if (!ctx.user) {
+          throw new Error("Please sign in with your Manus account to generate images");
+        }
+        
         // Check if user has enough credits
         const credits = await getUserCredits(ctx.user.id);
         if (credits < input.imageCount) {

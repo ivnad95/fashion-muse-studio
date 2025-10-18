@@ -15,7 +15,33 @@ export default function Home() {
     enabled: isAuthenticated,
   });
 
-  // No authentication required - app is publicly accessible
+  // Require Manus authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center">
+        <div className="glass-3d-surface p-8 rounded-3xl">
+          <div className="animate-pulse text-[#F5F7FA]">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B] flex items-center justify-center p-4">
+        <div className="glass-3d-surface p-8 rounded-3xl max-w-md text-center">
+          <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Welcome to Fashion Muse Studio</h2>
+          <p className="text-[#8A92A0] mb-6">Sign in with your Manus account to start generating stunning fashion photography</p>
+          <a
+            href={`${import.meta.env.VITE_OAUTH_PORTAL_URL}?app_id=${import.meta.env.VITE_APP_ID}`}
+            className="glass-3d-button px-6 py-3 rounded-full inline-block text-[#F5F7FA] font-semibold"
+          >
+            Sign In with Manus
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
@@ -107,18 +133,10 @@ function GenerateScreen({ user, creditsData }: any) {
       return;
     }
     
-    // Check credits for authenticated users only
-    if (user) {
-      if (user.role !== 'super_admin' && (!creditsData || creditsData.credits < imageCount)) {
-        toast.error("Insufficient credits. Please purchase more credits from Settings.");
-        return;
-      }
-    } else {
-      // Anonymous users limited to 2 images
-      if (imageCount > 2) {
-        toast.error("Anonymous users can generate up to 2 images. Sign in from Settings for more!");
-        return;
-      }
+    // Check credits
+    if (user?.role !== 'super_admin' && (!creditsData || creditsData.credits < imageCount)) {
+      toast.error("Insufficient credits. Please purchase more credits from Settings.");
+      return;
     }
 
     // Convert image to base64 for upload
@@ -151,7 +169,7 @@ function GenerateScreen({ user, creditsData }: any) {
       {/* Greeting Card */}
       <div className="glass-3d-surface p-6 rounded-3xl">
         <h1 className="text-2xl font-bold text-[#F5F7FA]">
-          {getGreeting()}, {user?.name?.split(' ')[0] || 'Guest'}
+          {getGreeting()}, {user?.name?.split(' ')[0] || 'User'}
         </h1>
       </div>
 
