@@ -77,7 +77,11 @@ export const appRouter = router({
   }),
 
   generations: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: publicProcedure.query(async ({ ctx }) => {
+      // Allow anonymous users - use session ID if no user
+      if (!ctx.user) {
+        return []; // Anonymous users see empty list initially
+      }
       const generations = await getUserGenerations(ctx.user.id);
       return generations.map(gen => ({
         ...gen,
@@ -96,7 +100,7 @@ export const appRouter = router({
         };
       }),
     
-    create: protectedProcedure
+    create: publicProcedure
       .input(z.object({
         originalUrl: z.string(), // Can be URL or base64 data URI
         imageCount: z.number().min(1).max(8),
@@ -144,7 +148,7 @@ export const appRouter = router({
         const generationId = crypto.randomUUID();
         const generation = await createGeneration({
           id: generationId,
-          userId: ctx.user.id,
+          userId: userId,
           originalUrl: originalImageUrl,
           imageCount: input.imageCount,
           aspectRatio: input.aspectRatio,
@@ -156,8 +160,10 @@ export const appRouter = router({
           status: "processing",
         });
         
-        // Deduct credits
-        await deductCredits(ctx.user.id, input.imageCount, generationId);
+        // Deduct credits only for authenticated users
+        if (ctx.user) {
+          await deductCredits(ctx.user.id, input.imageCount, generationId);
+        }
         
         // Generate images with AI in background
         (async () => {
@@ -267,10 +273,11 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    delete: protectedProcedure
+    delete: publicProcedure
       .input(z.object({ id: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        const success = await deleteGeneration(input.id, ctx.user.id);
+        const userId = ctx.user?.id || 'anonymous';
+        const success = await deleteGeneration(input.id, userId);
         if (!success) {
           throw new Error("Failed to delete generation. It may not exist or you may not have permission.");
         }
