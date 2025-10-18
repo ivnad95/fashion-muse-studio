@@ -140,9 +140,9 @@ export async function generateImageWithAdvancedPrompt(params: GenerateImageParam
     
     console.log(`[Gemini Advanced] Generating image with theme: ${theme}, pose: ${pose.substring(0, 50)}...`);
     
-    // Use gemini-2.5-flash-image-preview model
+    // Use gemini-2.5-flash-image model (official stable model)
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash-image-preview"
+      model: "gemini-2.5-flash-image"
     });
     
     // Prepare the parts
