@@ -4,7 +4,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { addCredits, createGeneration, deductCredits, deleteGeneration, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
-import { generateImagesWithGemini, buildFashionPrompt } from "./_core/geminiImageGen";
+import { generateImageWithAdvancedPrompt, selectRandomPoses, CATALOG_POSES } from "./_core/geminiImageGenAdvanced";
 // Post-processing removed - let Gemini handle image quality
 import { storagePut } from "./storage";
 import { createCheckoutSession, CREDIT_PACKAGES, handlePaymentSuccess } from "./_core/stripe";
@@ -197,49 +197,49 @@ export const appRouter = router({
               throw new Error(`Failed to process reference image: ${error instanceof Error ? error.message : "Unknown error"}`);
             }
             
-            // Generate multiple images using Gemini with reference image
+            // Select random poses from catalog
+            const selectedPoses = selectRandomPoses(input.imageCount);
+            const theme = input.style || 'studio'; // Use style field for theme
+            
+            console.log(`[Generation ${generationId}] Generating ${input.imageCount} images with theme: ${theme}`);
+            console.log(`[Generation ${generationId}] Selected poses:`, selectedPoses.map((p, i) => `${i + 1}. ${p.substring(0, 50)}...`));
+            
+            // Generate multiple images using advanced Gemini with catalog poses
             try {
-              console.log(`[Generation ${generationId}] Generating ${input.imageCount} images...`);
-              
-              // Generate each image separately (Gemini API generates 1 image per call)
+              // Generate each image separately with different poses
               for (let i = 0; i < input.imageCount; i++) {
                 try {
-                  console.log(`[Generation ${generationId}] Generating image ${i + 1}/${input.imageCount}...`);
+                  console.log(`[Generation ${generationId}] Generating image ${i + 1}/${input.imageCount} with pose: ${selectedPoses[i].substring(0, 60)}...`);
                   
-                  const result = await generateImagesWithGemini({
-                    prompt: buildFashionPrompt({
-                      style: input.style,
-                      cameraAngle: input.cameraAngle,
-                      lighting: input.lighting,
-                    }),
+                  const result = await generateImageWithAdvancedPrompt({
                     imageBase64: referenceImageBase64,
                     mimeType: "image/jpeg",
-                    style: input.style,
-                    cameraAngle: input.cameraAngle,
-                    lighting: input.lighting,
+                    pose: selectedPoses[i],
+                    aspectRatio: input.aspectRatio,
+                    theme: theme,
                   });
                   
-                  // Upload generated image directly to S3 without post-processing
-                  if (result.images.length > 0) {
-                    // Convert base64 to buffer (no post-processing)
-                    const imageBuffer = Buffer.from(result.images[0], "base64");
+                  // Upload generated image directly to S3
+                  if (result.success && result.imageBase64) {
+                    // Convert base64 to buffer
+                    const imageBuffer = Buffer.from(result.imageBase64, "base64");
                     
                     // Upload directly to S3
                     const fileName = `generations/${generationId}/image-${i + 1}-${Date.now()}.png`;
                     const uploadResult = await storagePut(fileName, imageBuffer, "image/png");
                     
-                    console.log(`[Generation ${generationId}] Uploaded image ${i + 1} to S3`);
+                    console.log(`[Generation ${generationId}] ✅ Image ${i + 1} generated and uploaded to S3`);
                     imageUrls.push(uploadResult.url);
                   } else {
-                    throw new Error("No image data returned from Gemini");
+                    throw new Error(result.error || "No image data returned from Gemini");
                   }
                 } catch (imageError) {
-                  console.error(`Error generating image ${i + 1}:`, imageError);
+                  console.error(`[Generation ${generationId}] ❌ Error generating image ${i + 1}:`, imageError);
                   imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
                 }
               }
             } catch (error) {
-              console.error("Gemini generation error:", error);
+              console.error(`[Generation ${generationId}] Fatal Gemini generation error:`, error);
               // Fallback to placeholder images
               for (let i = 0; i < input.imageCount; i++) {
                 imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
