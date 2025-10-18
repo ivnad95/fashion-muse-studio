@@ -15,6 +15,13 @@
       "when": 1760656577901,
       "tag": "0001_even_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1760723638456,
+      "tag": "0002_luxuriant_maginty",
+      "breakpoints": true
     }
   ]
 }

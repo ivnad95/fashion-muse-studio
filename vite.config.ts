@@ -27,6 +27,9 @@ export default defineConfig({
   },
   server: {
     host: true,
+    hmr: {
+      timeout: 30000,
+    },
     allowedHosts: [
       ".manuspre.computer",
       ".manus.computer",
@@ -39,6 +42,7 @@ export default defineConfig({
     fs: {
       strict: true,
       deny: ["**/.*"],
+      allow: [".."]
     },
   },
 });

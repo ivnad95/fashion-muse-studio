@@ -25,6 +25,10 @@ export async function setupVite(app: Express, server: Server) {
     const url = req.originalUrl;
 
     try {
+      // Set timeout for the response
+      req.setTimeout(10000);
+      res.setTimeout(10000);
+      
       const clientTemplate = path.resolve(
         import.meta.dirname,
         "../..",
@@ -38,9 +42,16 @@ export async function setupVite(app: Express, server: Server) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`
       );
-      const page = await vite.transformIndexHtml(url, template);
+      
+      const transformPromise = vite.transformIndexHtml(url, template);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Transform timeout')), 5000)
+      );
+      
+      const page = await Promise.race([transformPromise, timeoutPromise]) as string;
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
+      console.error('[Vite] Transform error:', e);
       vite.ssrFixStacktrace(e as Error);
       next(e);
     }

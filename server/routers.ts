@@ -3,11 +3,11 @@ import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { addCredits, createGeneration, deductCredits, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
+import { addCredits, createGeneration, deductCredits, deleteGeneration, getActiveSubscriptionPlans, getGeneration, getUser, getUserCredits, getUserGenerations, seedSubscriptionPlans, updateGeneration } from "./db";
 import { generateImagesWithGemini, buildFashionPrompt } from "./_core/geminiImageGen";
-import { applyStylePostProcessing } from "./_core/imagePostProcessing";
-import { analyzeImageQuality, detectAIArtifacts } from "./_core/imageQualityAssurance";
+// Post-processing removed - let Gemini handle image quality
 import { storagePut } from "./storage";
+import { createCheckoutSession, CREDIT_PACKAGES, handlePaymentSuccess } from "./_core/stripe";
 
 export const appRouter = router({
   system: systemRouter,
@@ -34,6 +34,30 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await addCredits(ctx.user.id, input.amount, "bonus", "Bonus credits");
         return { success: true };
+      }),
+
+    // Stripe payment integration
+    getPackages: publicProcedure.query(() => {
+      return CREDIT_PACKAGES;
+    }),
+
+    createCheckout: protectedProcedure
+      .input(z.object({ 
+        packageId: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await getUser(ctx.user.id);
+        if (!user) throw new Error("User not found");
+
+        const session = await createCheckoutSession({
+          userId: ctx.user.id,
+          userEmail: user.email || '',
+          packageId: input.packageId,
+          successUrl: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/plans?success=true`,
+          cancelUrl: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/plans?canceled=true`,
+        });
+
+        return session;
       }),
   }),
 
@@ -161,52 +185,45 @@ export const appRouter = router({
               throw new Error(`Failed to process reference image: ${error instanceof Error ? error.message : "Unknown error"}`);
             }
             
-            // Generate images using Gemini with reference image
+            // Generate multiple images using Gemini with reference image
             try {
-              const result = await generateImagesWithGemini({
-                prompt: buildFashionPrompt({
-                  style: input.style,
-                  cameraAngle: input.cameraAngle,
-                  lighting: input.lighting,
-                }),
-                imageBase64: referenceImageBase64,
-                mimeType: "image/jpeg",
-                style: input.style,
-                cameraAngle: input.cameraAngle,
-                lighting: input.lighting,
-              });
-                            // Post-process and upload generated images to S3
-              for (let i = 0; i < result.images.length; i++) {
+              console.log(`[Generation ${generationId}] Generating ${input.imageCount} images...`);
+              
+              // Generate each image separately (Gemini API generates 1 image per call)
+              for (let i = 0; i < input.imageCount; i++) {
                 try {
-                  // Convert base64 to buffer
-                  let imageBuffer = Buffer.from(result.images[i], "base64");
+                  console.log(`[Generation ${generationId}] Generating image ${i + 1}/${input.imageCount}...`);
                   
-                  // Apply style-specific post-processing for hyper-realism
-                  console.log(`[Generation ${generationId}] Applying post-processing for style: ${input.style}`);
-                  const processedBuffer = await applyStylePostProcessing(imageBuffer, input.style || "Editorial");
-                  imageBuffer = Buffer.from(processedBuffer);
+                  const result = await generateImagesWithGemini({
+                    prompt: buildFashionPrompt({
+                      style: input.style,
+                      cameraAngle: input.cameraAngle,
+                      lighting: input.lighting,
+                    }),
+                    imageBase64: referenceImageBase64,
+                    mimeType: "image/jpeg",
+                    style: input.style,
+                    cameraAngle: input.cameraAngle,
+                    lighting: input.lighting,
+                  });
                   
-                  // Quality assurance check
-                  const qualityMetrics = await analyzeImageQuality(imageBuffer);
-                  console.log(`[Generation ${generationId}] Quality score: ${qualityMetrics.score}/100`);
-                  
-                  if (!qualityMetrics.passed) {
-                    console.warn(`[Generation ${generationId}] Quality issues:`, qualityMetrics.issues);
+                  // Upload generated image directly to S3 without post-processing
+                  if (result.images.length > 0) {
+                    // Convert base64 to buffer (no post-processing)
+                    const imageBuffer = Buffer.from(result.images[0], "base64");
+                    
+                    // Upload directly to S3
+                    const fileName = `generations/${generationId}/image-${i + 1}-${Date.now()}.png`;
+                    const uploadResult = await storagePut(fileName, imageBuffer, "image/png");
+                    
+                    console.log(`[Generation ${generationId}] Uploaded image ${i + 1} to S3`);
+                    imageUrls.push(uploadResult.url);
+                  } else {
+                    throw new Error("No image data returned from Gemini");
                   }
-                  
-                  // AI artifact detection
-                  const artifactCheck = await detectAIArtifacts(imageBuffer);
-                  if (artifactCheck.hasArtifacts) {
-                    console.warn(`[Generation ${generationId}] AI artifacts detected:`, artifactCheck.artifacts);
-                  }                  
-                  // Upload to S3
-                  const fileName = `generations/${generationId}/image-${i + 1}-${Date.now()}.png`;
-                  const uploadResult = await storagePut(fileName, imageBuffer, "image/png");
-                  
-                  imageUrls.push(uploadResult.url);
-                } catch (uploadError) {
-                  console.error(`Error uploading image ${i + 1}:`, uploadError);
-                  imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Upload+Error`);
+                } catch (imageError) {
+                  console.error(`Error generating image ${i + 1}:`, imageError);
+                  imageUrls.push(`https://placehold.co/600x800/0A133B/F5F7FA?text=Generation+Error`);
                 }
               }
             } catch (error) {
@@ -247,6 +264,16 @@ export const appRouter = router({
           isFavorite: generation.isFavorite ? 0 : 1,
         });
         
+        return { success: true };
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const success = await deleteGeneration(input.id, ctx.user.id);
+        if (!success) {
+          throw new Error("Failed to delete generation. It may not exist or you may not have permission.");
+        }
         return { success: true };
       }),
   }),

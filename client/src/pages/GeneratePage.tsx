@@ -5,8 +5,10 @@ import { trpc } from "@/lib/trpc";
 import { Camera, Upload, Image as ImageIcon, Sparkles } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function GeneratePage() {
+  const { user } = useAuth();
   const [imageCount, setImageCount] = useState(1);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -135,7 +137,7 @@ export default function GeneratePage() {
               ))}
             </div>
             <p className="text-xs text-[#8A92A0] mt-2">
-              Cost: {imageCount} credit{imageCount > 1 ? "s" : ""} | Available: {creditsData?.credits || 0}
+              Cost: {imageCount} credit{imageCount > 1 ? "s" : ""} | Available: {user?.role === 'super_admin' ? '∞' : (creditsData?.credits || 0)}
             </p>
           </div>
 

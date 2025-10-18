@@ -11,10 +11,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/generate" component={Home} />
+      <Route path="/results" component={Home} />
       <Route path="/history" component={Home} />
       <Route path="/settings" component={Home} />
-      <Route path="/plans" component={Home} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

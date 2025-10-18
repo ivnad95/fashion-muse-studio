@@ -1,114 +1,156 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Check, Sparkles } from "lucide-react";
+import { Check, CreditCard, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 export default function PlansPage() {
-  const { data: plans, isLoading } = trpc.plans.list.useQuery();
+  const { user } = useAuth();
   const { data: creditsData } = trpc.credits.getBalance.useQuery();
+  const { data: plans } = trpc.plans.list.useQuery();
+  const { data: packages } = trpc.credits.getPackages.useQuery();
+  const createCheckout = trpc.credits.createCheckout.useMutation();
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="loader"></div>
-      </div>
-    );
-  }
+  const handlePurchase = async (packageId: string) => {
+    try {
+      const { url } = await createCheckout.mutateAsync({ packageId });
+      // Redirect to Stripe checkout
+      window.location.href = url;
+    } catch (error) {
+      toast.error("Failed to start checkout");
+      console.error(error);
+    }
+  };
 
   return (
-    <div className="space-y-6 pb-6">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-[#F5F7FA] mb-2">Choose Your Plan</h2>
-        <p className="text-[#C8CDD5]">Unlock unlimited creativity with our flexible plans</p>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-[#F5F7FA] mb-2">Credit Packages</h1>
+        <p className="text-[#C8CDD5]">Purchase credits to generate stunning fashion photography</p>
         
         <div className="mt-4 glass-3d-surface inline-flex items-center gap-2 px-4 py-2 rounded-full">
           <Sparkles className="w-4 h-4 text-[#F5F7FA]" />
-          <span className="text-[#F5F7FA] font-semibold">{creditsData?.credits || 0} credits available</span>
+          <span className="text-[#F5F7FA] font-semibold">
+            {user?.role === 'super_admin' ? '∞' : (creditsData?.credits || 0)} credits available
+          </span>
         </div>
+      </div>
+
+      {/* Credit Packages */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        {packages?.map((pkg) => (
+          <div
+            key={pkg.id}
+            className={`glass-3d-surface p-6 rounded-2xl relative ${
+              pkg.popular ? 'ring-2 ring-[#0A76AF]' : ''
+            }`}
+          >
+            {pkg.popular && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#0A76AF] to-[#004b93] text-white text-xs px-3 py-1 rounded-full">
+                Most Popular
+              </div>
+            )}
+            {pkg.bestValue && (
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-black text-xs px-3 py-1 rounded-full font-semibold">
+                Best Value
+              </div>
+            )}
+            
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-br from-[#0A76AF] to-[#004b93] flex items-center justify-center">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-[#F5F7FA] mb-1">{pkg.name}</h3>
+              <div className="text-3xl font-bold text-[#F5F7FA]">
+                £{pkg.price}
+              </div>
+              <p className="text-sm text-[#8A92A0] mt-1">
+                £{(pkg.price / pkg.credits).toFixed(2)} per credit
+              </p>
+            </div>
+
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center gap-2 text-[#C8CDD5] text-sm">
+                <Check className="w-4 h-4 text-[#0A76AF]" />
+                <span>{pkg.credits} generation credits</span>
+              </div>
+              <div className="flex items-center gap-2 text-[#C8CDD5] text-sm">
+                <Check className="w-4 h-4 text-[#0A76AF]" />
+                <span>Never expires</span>
+              </div>
+              <div className="flex items-center gap-2 text-[#C8CDD5] text-sm">
+                <Check className="w-4 h-4 text-[#0A76AF]" />
+                <span>All styles & features</span>
+              </div>
+            </div>
+
+            <Button
+              className="w-full bg-gradient-to-r from-[#0A76AF] to-[#004b93] hover:from-[#004b93] hover:to-[#0A76AF] text-white"
+              onClick={() => handlePurchase(pkg.id)}
+              disabled={createCheckout.isPending || user?.role === 'super_admin'}
+            >
+              {user?.role === 'super_admin' ? 'Unlimited Credits' : 'Purchase'}
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* Subscription Plans Info */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-[#F5F7FA] mb-4">Subscription Plans</h2>
+        <p className="text-[#8A92A0] text-sm mb-6">
+          Monthly subscription plans coming soon! For now, purchase credit packages above.
+        </p>
       </div>
 
       <div className="space-y-4">
         {plans?.map((plan) => {
-          const isFree = plan.name === "free";
-          const isPopular = plan.name === "pro";
-          
+          const features = plan.features as string[];
           return (
-            <Card 
-              key={plan.id} 
-              className={`glass-3d-surface p-6 rounded-3xl relative ${isPopular ? 'border-2 border-[#0A76AF]' : ''}`}
+            <div
+              key={plan.id}
+              className="glass-3d-surface p-6 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
             >
-              {isPopular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-[#0A76AF] to-[#004b93] rounded-full">
-                  <span className="text-xs font-bold text-white">MOST POPULAR</span>
-                </div>
-              )}
-
-              <div className="mb-4">
-                <h3 className="text-2xl font-bold text-[#F5F7FA] mb-1">{plan.displayName}</h3>
-                <p className="text-[#C8CDD5] text-sm">{plan.description}</p>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-[#F5F7FA]">
-                    {isFree ? "$0" : `$${(plan.priceMonthly / 100).toFixed(0)}`}
-                  </span>
-                  <span className="text-[#8A92A0]">/month</span>
-                </div>
-                {!isFree && (
-                  <p className="text-sm text-[#8A92A0] mt-1">
-                    or ${(plan.priceYearly / 100).toFixed(0)}/year (save 17%)
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-[#0A76AF]" />
-                  <span className="text-[#F5F7FA] font-semibold">
-                    {plan.monthlyCredits === 999999 ? "Unlimited" : plan.monthlyCredits} credits/month
-                  </span>
-                </div>
-                
-                <ul className="space-y-2">
-                  {plan.features.map((feature: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-[#0A76AF] flex-shrink-0 mt-0.5" />
-                      <span className="text-[#C8CDD5] text-sm">{feature}</span>
-                    </li>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-[#F5F7FA] mb-1">{plan.name}</h3>
+                <p className="text-[#C8CDD5] text-sm mb-3">{plan.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {features.map((feature, idx) => (
+                    <span
+                      key={idx}
+                      className="text-xs bg-white/5 px-3 py-1 rounded-full text-[#C8CDD5]"
+                    >
+                      {feature}
+                    </span>
                   ))}
-                </ul>
+                </div>
               </div>
-
-              <Button
-                onClick={() => {
-                  if (isFree) {
-                    toast.info("You're already on the free plan!");
-                  } else {
-                    toast.info("Payment integration coming soon!");
-                  }
-                }}
-                className={`glass-3d-button w-full ${isPopular ? 'primary-button' : ''}`}
-              >
-                <span className="button-text">
-                  {isFree ? "Current Plan" : "Upgrade Now"}
-                </span>
-              </Button>
-            </Card>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#F5F7FA]">
+                  {plan.priceMonthly > 0 ? `£${(plan.priceMonthly / 100).toFixed(2)}/mo` : 'Free'}
+                </div>
+                <div className="text-sm text-[#8A92A0] mt-1">
+                  {plan.monthlyCredits} credits/month
+                </div>
+              </div>
+            </div>
           );
         })}
       </div>
 
-      <Card className="glass-3d-surface p-6 rounded-3xl">
-        <h3 className="text-lg font-semibold text-[#F5F7FA] mb-3">💡 How Credits Work</h3>
-        <ul className="space-y-2 text-sm text-[#C8CDD5]">
-          <li>• Each image generation costs 1 credit</li>
-          <li>• Credits reset monthly on your billing date</li>
-          <li>• Unused credits don't roll over</li>
-          <li>• Cancel anytime, no questions asked</li>
-        </ul>
-      </Card>
+      {/* Payment Info */}
+      <div className="mt-8 glass-3d-surface p-6 rounded-2xl">
+        <div className="flex items-start gap-3">
+          <CreditCard className="w-5 h-5 text-[#0A76AF] mt-1" />
+          <div>
+            <h3 className="text-lg font-semibold text-[#F5F7FA] mb-2">Secure Payment</h3>
+            <p className="text-[#C8CDD5] text-sm">
+              All payments are processed securely through Stripe. We never store your payment information.
+              Credits are added to your account instantly after successful payment.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

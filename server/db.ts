@@ -171,6 +171,20 @@ export async function getGeneration(id: string) {
   return result.length > 0 ? result[0] : null;
 }
 
+export async function deleteGeneration(id: string, userId: string): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  // Verify ownership before deletion
+  const generation = await getGeneration(id);
+  if (!generation || generation.userId !== userId) {
+    return false;
+  }
+  
+  await db.delete(generations).where(eq(generations.id, id));
+  return true;
+}
+
 // Subscription plan helpers
 export async function getActiveSubscriptionPlans() {
   const db = await getDb();

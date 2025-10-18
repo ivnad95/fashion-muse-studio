@@ -1,10 +1,11 @@
-import { Camera, History, Settings, Sparkles } from "lucide-react";
+import { Camera, Grid3x3, Clock, Settings as SettingsIcon } from "lucide-react";
 import { Route, Switch, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import GeneratePage from "./GeneratePage";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+import ResultsPage from "./ResultsPage";
 import HistoryPage from "./HistoryPage";
-import PlansPage from "./PlansPage";
 import SettingsPage from "./SettingsPage";
 
 export default function Home() {
@@ -43,29 +44,20 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0A133B] via-[#002857] to-[#0A133B]">
-      {/* Fixed Header - Credits Only */}
-      <div className="fixed top-0 right-0 z-50 px-4 md:px-8 py-4">
-        <div className="glass-3d-surface px-4 py-2 rounded-full flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-[#F5F7FA]" />
-          <span className="text-base font-semibold text-[#F5F7FA]">{creditsData?.credits || 0}</span>
-        </div>
-      </div>
-
-      {/* Main Content - Mobile: Stack, Desktop: Grid */}
-      <div className="pt-20 pb-28 md:pb-8 px-4 md:px-8 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+      {/* Main Content */}
+      <div className="pt-6 pb-28 md:pb-8 px-4 md:px-8 min-h-screen">
+        <div className="max-w-2xl mx-auto">
           <Switch location={location}>
-            <Route path="/" component={WelcomeScreen} />
-            <Route path="/generate" component={GeneratePage} />
+            <Route path="/" component={() => <GenerateScreen user={user} creditsData={creditsData} />} />
+            <Route path="/results" component={ResultsPage} />
             <Route path="/history" component={HistoryPage} />
             <Route path="/settings" component={SettingsPage} />
-            <Route path="/plans" component={PlansPage} />
           </Switch>
         </div>
       </div>
 
-      {/* Bottom Navigation - Mobile Only, Fully Transparent */}
-      <nav className="fixed bottom-0 left-0 right-0 md:hidden z-50 px-4 pb-6 pt-4 flex items-center justify-center gap-4">
+      {/* Bottom Navigation - Mobile Only */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-4 flex items-center justify-center gap-4">
         <button 
           onClick={() => setLocation("/")}
           className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
@@ -74,161 +66,253 @@ export default function Home() {
         </button>
         
         <button 
-          onClick={() => setLocation("/generate")}
-          className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
+          onClick={() => setLocation("/results")}
+          className={`nav-button glass-3d-button ${location === "/results" ? "active" : ""}`}
         >
-          <Sparkles className="w-7 h-7" />
+          <Grid3x3 className="w-6 h-6" />
         </button>
         
         <button 
           onClick={() => setLocation("/history")}
           className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
         >
-          <History className="w-6 h-6" />
+          <Clock className="w-6 h-6" />
         </button>
         
         <button 
           onClick={() => setLocation("/settings")}
           className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
         >
-          <Settings className="w-6 h-6" />
+          <SettingsIcon className="w-6 h-6" />
         </button>
-      </nav>
-
-      {/* Desktop Navigation - Right Sidebar */}
-      <nav className="hidden md:block fixed right-8 top-1/2 -translate-y-1/2 z-50">
-        <div className="glass-3d-surface rounded-3xl p-4 flex flex-col gap-4">
-          <button 
-            onClick={() => setLocation("/")}
-            className={`nav-button glass-3d-button ${location === "/" ? "active" : ""}`}
-            title="Home"
-          >
-            <Camera className="w-6 h-6" />
-          </button>
-          
-          <button 
-            onClick={() => setLocation("/generate")}
-            className={`nav-button glass-3d-button sparkle-button ${location === "/generate" ? "active" : ""}`}
-            title="Generate"
-          >
-            <Sparkles className="w-7 h-7" />
-          </button>
-          
-          <button 
-            onClick={() => setLocation("/history")}
-            className={`nav-button glass-3d-button ${location === "/history" ? "active" : ""}`}
-            title="History"
-          >
-            <History className="w-6 h-6" />
-          </button>
-          
-          <button 
-            onClick={() => setLocation("/settings")}
-            className={`nav-button glass-3d-button ${location === "/settings" ? "active" : ""}`}
-            title="Settings"
-          >
-            <Settings className="w-6 h-6" />
-          </button>
-        </div>
       </nav>
     </div>
   );
 }
 
-function WelcomeScreen() {
-  const [location, setLocation] = useLocation();
+function GenerateScreen({ user, creditsData }: any) {
+  const [, setLocation] = useLocation();
+  const [imageCount, setImageCount] = useState(1);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [style, setStyle] = useState("Editorial");
+  const [cameraAngle, setCameraAngle] = useState("Hero low angle");
+  const [lighting, setLighting] = useState("Rembrandt");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const createMutation = trpc.generations.create.useMutation({
+    onSuccess: () => {
+      toast.success("Generation started!");
+      setImageFile(null);
+      setImagePreview("");
+      // Redirect to results page
+      setLocation("/results");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to start generation");
+    },
+  });
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!imageFile) {
+      toast.error("Please upload an image first");
+      return;
+    }
+    
+    if (user?.role !== 'super_admin' && (!creditsData || creditsData.credits < imageCount)) {
+      toast.error("Insufficient credits");
+      return;
+    }
+
+    // Convert image to base64 for upload
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result as string;
+      
+      createMutation.mutate({
+        originalUrl: base64,
+        imageCount,
+        aspectRatio: "portrait",
+        prompt: "Transform this into a professional fashion photoshoot",
+        style,
+        cameraAngle,
+        lighting,
+      });
+    };
+    reader.readAsDataURL(imageFile);
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Hero Section - Desktop: 2 columns */}
-      <div className="glass-3d-surface p-8 md:p-12 rounded-3xl">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-[#F5F7FA] mb-4">
-              Welcome to Fashion Muse
-            </h2>
-            <p className="text-[#8A92A0] text-lg mb-6">
-              Transform your photos into stunning professional fashion photography with AI-powered generation.
-            </p>
-            <button
-              onClick={() => setLocation("/generate")}
-              className="glass-3d-button primary-button w-full md:w-auto px-8 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-5 h-5" />
-              <span className="button-text">Start Creating</span>
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => setLocation("/history")}
-              className="glass-3d-button p-6 rounded-2xl flex flex-col items-center gap-2"
-            >
-              <History className="w-8 h-8 text-[#F5F7FA]" />
-              <span className="button-text text-sm">History</span>
-            </button>
-            <button
-              onClick={() => setLocation("/plans")}
-              className="glass-3d-button p-6 rounded-2xl flex flex-col items-center gap-2"
-            >
-              <Sparkles className="w-8 h-8 text-[#F5F7FA]" />
-              <span className="button-text text-sm">Plans</span>
-            </button>
-          </div>
-        </div>
+    <div className="space-y-4">
+      {/* Greeting Card */}
+      <div className="glass-3d-surface p-6 rounded-3xl">
+        <h1 className="text-2xl font-bold text-[#F5F7FA]">
+          {getGreeting()}, {user?.name?.split(' ')[0] || 'User'}
+        </h1>
       </div>
 
-      {/* Features Grid - Desktop: 3 columns */}
-      <div className="glass-3d-surface p-8 rounded-3xl">
-        <h3 className="text-2xl font-bold text-[#F5F7FA] mb-6">Features</h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="flex items-start gap-4">
-            <div className="glass-3d-surface p-3 rounded-xl">
-              <Camera className="w-6 h-6 text-[#F5F7FA]" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">8 Camera Angles</h4>
-              <p className="text-sm text-[#8A92A0]">Professional photography perspectives</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="glass-3d-surface p-3 rounded-xl">
-              <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">Multiple Lighting</h4>
-              <p className="text-sm text-[#8A92A0]">Studio-quality lighting setups</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="glass-3d-surface p-3 rounded-xl">
-              <Sparkles className="w-6 h-6 text-[#F5F7FA]" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-[#F5F7FA] mb-1">Credit System</h4>
-              <p className="text-sm text-[#8A92A0]">Flexible plans for every need</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Your Plan Section */}
-      <div className="glass-3d-surface p-8 rounded-3xl">
-        <h3 className="text-2xl font-bold text-[#F5F7FA] mb-6">Your Plan</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-semibold text-[#F5F7FA] mb-1">Free Plan</h4>
-            <p className="text-sm text-[#8A92A0]">10 credits remaining</p>
-          </div>
+      {/* Image Count Selector */}
+      <div className="flex gap-2 justify-center">
+        {[1, 2, 4, 6, 8].map((num) => (
           <button
-            onClick={() => setLocation("/plans")}
-            className="glass-3d-button px-6 py-3 rounded-full"
+            key={num}
+            onClick={() => setImageCount(num)}
+            className={`w-14 h-14 rounded-full glass-3d-button flex items-center justify-center ${
+              imageCount === num ? "active" : ""
+            }`}
           >
-            <span className="button-text">Upgrade</span>
+            <span className="button-text font-semibold text-lg">{num}</span>
           </button>
-        </div>
+        ))}
+      </div>
+
+      {/* Upload Area */}
+      <div className="glass-3d-surface rounded-3xl overflow-hidden">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageSelect}
+          className="hidden"
+        />
+        
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full aspect-[3/4] relative group"
+        >
+          {imagePreview ? (
+            <>
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="text-center">
+                  <Camera className="w-12 h-12 text-white mx-auto mb-2" />
+                  <p className="text-white font-medium">Change Image</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+              <img 
+                src="/logo.png" 
+                alt="Fashion Muse Studio" 
+                className="w-32 h-32 object-contain opacity-60"
+              />
+              <div className="text-center">
+                <p className="text-[#8A92A0] text-lg font-medium mb-1">Tap to upload your photo</p>
+                <p className="text-[#8A92A0]/60 text-sm">Start your fashion transformation</p>
+              </div>
+            </div>
+          )}
+        </button>
+      </div>
+
+      {/* Generate Button */}
+      <button
+        onClick={handleGenerate}
+        disabled={createMutation.isPending || !imageFile}
+        className="w-full glass-3d-button primary-button py-4 rounded-3xl disabled:opacity-50"
+      >
+        {createMutation.isPending ? (
+          <div className="loading-dots">
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        ) : (
+          <span className="button-text text-lg font-semibold">Generate Photoshoot</span>
+        )}
+      </button>
+
+      {/* Advanced Options - Collapsible */}
+      <div className="glass-3d-surface rounded-3xl overflow-hidden">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full px-6 py-4 flex items-center justify-between"
+        >
+          <span className="text-[#F5F7FA] font-medium">Advanced Options</span>
+          <span className="text-[#8A92A0]">{showAdvanced ? "−" : "+"}</span>
+        </button>
+        
+        {showAdvanced && (
+          <div className="px-6 pb-6 space-y-4 border-t border-white/10">
+            {/* Style Selection */}
+            <div className="pt-4">
+              <p className="text-[#C8CDD5] text-sm mb-2">Style</p>
+              <div className="grid grid-cols-2 gap-2">
+                {["Editorial", "Vogue", "Minimalist", "Vintage"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStyle(s)}
+                    className={`glass-3d-button px-4 py-2 rounded-xl ${style === s ? "active" : ""}`}
+                  >
+                    <span className="button-text text-sm">{s}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Camera Angle */}
+            <div>
+              <p className="text-[#C8CDD5] text-sm mb-2">Camera Angle</p>
+              <div className="grid grid-cols-2 gap-2">
+                {["Hero low angle", "Beauty close-up", "Editorial side", "Full body"].map((angle) => (
+                  <button
+                    key={angle}
+                    onClick={() => setCameraAngle(angle)}
+                    className={`glass-3d-button px-4 py-2 rounded-xl ${cameraAngle === angle ? "active" : ""}`}
+                  >
+                    <span className="button-text text-sm">{angle}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Lighting */}
+            <div>
+              <p className="text-[#C8CDD5] text-sm mb-2">Lighting</p>
+              <div className="grid grid-cols-2 gap-2">
+                {["Rembrandt", "Butterfly", "Split", "Loop"].map((light) => (
+                  <button
+                    key={light}
+                    onClick={() => setLighting(light)}
+                    className={`glass-3d-button px-4 py-2 rounded-xl ${lighting === light ? "active" : ""}`}
+                  >
+                    <span className="button-text text-sm">{light}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Credits Info */}
+      <div className="text-center text-sm text-[#8A92A0]">
+        Cost: {imageCount} credit{imageCount > 1 ? "s" : ""} • Available: {user?.role === 'super_admin' ? '∞' : (creditsData?.credits || 0)}
       </div>
     </div>
   );
