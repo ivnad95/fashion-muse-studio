@@ -153,7 +153,7 @@ export const appRouter = router({
         const generationId = crypto.randomUUID();
         const generation = await createGeneration({
           id: generationId,
-          userId: userId,
+          userId: ctx.user.id,
           originalUrl: originalImageUrl,
           imageCount: input.imageCount,
           aspectRatio: input.aspectRatio,
@@ -173,6 +173,7 @@ export const appRouter = router({
         // Generate images with AI in background
         (async () => {
           try {
+            console.log(`[Generation ${generationId}] Starting background generation for user ${ctx.user.id}`);
             const startTime = Date.now();
             const imageUrls: string[] = [];
             
@@ -254,7 +255,8 @@ export const appRouter = router({
               processingTime,
             });
           } catch (error) {
-            console.error("Generation error:", error);
+            console.error(`[Generation ${generationId}] Fatal generation error:`, error);
+            console.error(`[Generation ${generationId}] Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
             await updateGeneration(generationId, {
               status: "failed",
               errorMessage: error instanceof Error ? error.message : "Unknown error",
